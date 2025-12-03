@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurumsal Sohbet Sistemi</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <img id="headerLogo" src="/img/logo.png" onerror="this.style.display='none'" class="header-logo" alt="Logo">
+                <h1 style="font-size:1.2rem; font-weight:bold;">Kurumsal Sohbet</h1>
+            </div>
+            <div class="header-right">
+                <!-- Kullanıcı Bilgisi ve Ünvan Alanı -->
+                <div style="text-align:right; margin-right:15px; line-height:1.2;">
+                    <div id="currentUserName" style="font-weight:bold; font-size:0.9rem;">Yükleniyor...</div>
+                    <div id="user-title-display" style="font-size:0.75rem; color:#666;">...</div>
+                </div>
+                
+                <button id="adminBtn" class="btn btn-sm btn-secondary" style="display:none;" onclick="location.href='/admin.html'">⚙️ Admin</button>
+                <button id="logoutBtn" class="btn btn-sm btn-danger">Çıkış</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- SOL PANEL: Kullanıcılar -->
+            <aside class="left-panel">
+                <div class="panel-header">
+                    <h2>Kullanıcılar</h2>
+                    <input type="text" id="userSearch" placeholder="Ara..." style="padding:5px; border-radius:4px; border:1px solid #ccc; width: 120px;">
+                </div>
+                <div id="userList" class="user-list"></div>
+            </aside>
+
+            <!-- ORTA PANEL: Sohbet -->
+            <main class="center-panel">
+                <!-- Varsayılan Görünüm -->
+                <div id="defaultView" class="default-view">
+                    <img src="/img/logo.png" onerror="this.style.display='none'" class="center-logo" alt="Logo">
+                    <p class="welcome-text">Sohbet etmek için kişi seçiniz</p>
+                </div>
+
+                <!-- Sohbet Penceresi -->
+                <div id="chatWindow" class="chat-window" style="display:none;">
+                    <div class="chat-header">
+                        <div class="chat-user-info">
+                            <span class="chat-user-name" id="chatUserName" style="font-weight:bold;"></span>
+                            <span class="chat-user-status" id="chatUserStatus" style="font-size:0.8rem; margin-left:10px; color:#666;"></span>
+                        </div>
+                        <button id="closeChatBtn" class="btn-close">✕</button>
+                    </div>
+                    
+                    <div id="chatMessages" class="chat-messages"></div>
+                    
+                    <!-- Dosya Yükleme Progress -->
+                    <div id="uploadProgress" style="display:none; padding:10px; background:#fff; text-align:center; font-size:0.8rem; border-top:1px solid #eee;">Dosya Yükleniyor...</div>
+
+                    <div class="chat-input">
+                        <input type="file" id="chatFileInput" style="display:none;">
+                        <button class="btn-close" style="font-size:1.5rem; margin-right:10px; cursor:pointer;" onclick="document.getElementById('chatFileInput').click()">📎</button>
+                        <textarea id="messageInput" placeholder="Mesajınızı yazın... (Enter gönderir)" rows="1"></textarea>
+                        <button id="sendMessageBtn" class="btn btn-primary">Gönder</button>
+                    </div>
+                </div>
+            </main>
+
+            <!-- SAĞ PANEL: Duyurular -->
+            <aside class="right-panel">
+                <div class="panel-header">
+                    <h2>Duyuru Panosu</h2>
+                    <button id="addAnnouncementBtn" class="btn btn-sm btn-success" style="display:none;">+ Ekle</button>
+                </div>
+                <div id="announcementList" class="announcement-list"></div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Duyuru Ekleme Modal -->
+    <div id="announcementModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Yeni Duyuru</h2><button class="btn-close" onclick="closeModal('announcementModal')">✕</button></div>
+            <div class="form-group"><label>Başlık</label><input type="text" id="annTitle"></div>
+            <div class="form-group"><label>İçerik</label><textarea id="annContent" rows="4"></textarea></div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeModal('announcementModal')">İptal</button>
+                <button class="btn btn-primary" onclick="saveAnnouncement()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kurumsal Sohbet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #999; }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen overflow-hidden flex flex-col">
+
+    <!-- Üst Bar -->
+    <header class="bg-white shadow-sm px-4 py-3 flex justify-between items-center h-16 shrink-0 z-20 relative">
+        <div class="flex items-center gap-3">
+            <img src="/img/logo.png" onerror="this.src='https://via.placeholder.com/40?text=Logo'" class="h-10 w-auto object-contain">
+            <h1 class="text-xl font-bold text-gray-800 hidden sm:block">Kurumsal Sohbet</h1>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="text-right leading-tight">
+                <div id="user-name-display" class="font-bold text-sm text-gray-900">Yükleniyor...</div>
+                <div id="user-title-display" class="text-xs text-gray-500">...</div>
+            </div>
+            
+            <div id="admin-menu" style="display: none;">
+                <a href="/admin.html" class="bg-purple-100 text-purple-700 px-3 py-2 rounded text-sm hover:bg-purple-200 font-medium transition">
+                    <i class="fas fa-cog"></i> Admin
+                </a>
+            </div>
+            
+            <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm transition font-medium">
+                <i class="fas fa-sign-out-alt"></i> Çıkış
+            </button>
+        </div>
+    </header>
+
+    <!-- Ana İçerik (3 Sütun) -->
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- 1. SOL SÜTUN: KULLANICILAR -->
+        <aside class="w-80 bg-white border-r flex flex-col z-10">
+            <div class="p-3 border-b bg-gray-50">
+                <h2 class="font-bold text-gray-700 mb-2 text-sm uppercase tracking-wide">Kullanıcılar</h2>
+                <div class="relative">
+                    <input type="text" id="search-user" placeholder="Ara..." class="w-full pl-8 pr-3 py-2 border rounded text-sm focus:outline-none focus:border-blue-500">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+            </div>
+            <ul id="user-list" class="flex-1 overflow-y-auto">
+                <li class="p-4 text-center text-gray-500 text-sm italic">Kullanıcılar yükleniyor...</li>
+            </ul>
+        </aside>
+
+        <!-- 2. ORTA SÜTUN: SOHBET -->
+        <main class="flex-1 flex flex-col bg-gray-100 relative min-w-0">
+            <!-- Sohbet Başlığı -->
+            <div id="chat-header-user" class="h-14 bg-white border-b flex items-center px-4 shadow-sm shrink-0">
+                <div class="text-gray-400 italic text-sm flex items-center gap-2">
+                    <i class="fas fa-arrow-left text-gray-300"></i> Soldan bir kişi seçin
+                </div>
+            </div>
+
+            <!-- Mesajlar -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div class="flex flex-col items-center justify-center h-full text-gray-400 opacity-50">
+                    <i class="far fa-comments text-6xl mb-4"></i>
+                    <p>Sohbet başlatmak için bir kullanıcı seçin</p>
+                </div>
+            </div>
+
+            <!-- Mesaj Yazma Alanı -->
+            <div class="p-3 bg-white border-t shrink-0">
+                <form id="message-form" class="flex items-end gap-2 max-w-4xl mx-auto">
+                    <!-- Gizli Dosya Input -->
+                    <input type="file" id="chat-file-input" class="hidden">
+                    
+                    <!-- Ataş Butonu -->
+                    <button type="button" id="chat-file-btn" class="mb-1 text-gray-500 hover:text-blue-600 p-2 rounded-full hover:bg-gray-100 transition" title="Dosya Gönder">
+                        <i class="fas fa-paperclip text-lg"></i>
+                    </button>
+                    
+                    <!-- Text Area -->
+                    <textarea id="message-input" rows="1" class="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 resize-none bg-gray-50" placeholder="Mesajınızı yazın... (Enter gönderir)"></textarea>
+                    
+                    <!-- Gönder Butonu -->
+                    <button type="submit" id="send-message-btn" class="mb-1 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full w-10 h-10 flex items-center justify-center transition shadow-md">
+                        <i class="fas fa-paper-plane text-sm"></i>
+                    </button>
+                </form>
+            </div>
+        </main>
+
+        <!-- 3. SAĞ SÜTUN: DUYURULAR -->
+        <aside class="w-72 bg-white border-l flex flex-col z-10 hidden md:flex">
+            <div class="p-3 border-b bg-yellow-50 flex justify-between items-center h-14 shrink-0">
+                <h2 class="font-bold text-yellow-800 text-sm uppercase flex items-center gap-2">
+                    <i class="fas fa-bullhorn"></i> Duyurular
+                </h2>
+                <button id="new-announcement-btn" class="text-xs bg-yellow-600 text-white px-2 py-1 rounded hover:bg-yellow-700 shadow-sm transition">
+                    + Ekle
+                </button>
+            </div>
+            <div id="announcement-list" class="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50">
+                <div class="text-center text-gray-400 text-sm mt-4">Duyuru yok</div>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Duyuru Ekleme Modalı -->
+    <div id="announcement-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-2xl w-96 p-6 transform transition-all scale-100">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800">Yeni Duyuru</h3>
+                <button id="close-modal-x" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Duyuru Başlığı</label>
+                    <input type="text" id="announcement-title" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none" placeholder="Örn: Toplantı Hakkında">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">İçerik</label>
+                    <textarea id="announcement-content" rows="4" class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-yellow-500 focus:border-transparent outline-none" placeholder="Duyuru metnini giriniz..."></textarea>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <button id="cancel-announcement-btn" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded border transition">İptal</button>
+                <button id="save-announcement-btn" class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 shadow-sm transition font-medium">Yayınla</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Socket ve JS -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Paneli - Kurumsal Sohbet</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>⚙️ Admin Paneli</h1>
+            <button onclick="window.location.href='/'" class="btn btn-secondary">← Ana Sayfaya Dön</button>
+        </div>
+        
+        <!-- İstatistikler -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalUsers">0</div>
+                <div class="stat-label">Toplam Kullanıcı</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="onlineUsers">0</div>
+                <div class="stat-label">Çevrimiçi</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalMessages">0</div>
+                <div class="stat-label">Toplam Mesaj</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalAnnouncements">0</div>
+                <div class="stat-label">Duyuru</div>
+            </div>
+        </div>
+
+        <!-- Kullanıcı Yönetimi -->
+        <div class="admin-section">
+            <div class="section-header">
+                <h2>Kullanıcı Yönetimi</h2>
+                <div>
+                    <button onclick="openModal('addUserModal')" class="btn btn-primary">+ Tek Ekle</button>
+                    <button onclick="openModal('bulkUserModal')" class="btn btn-success">📋 Toplu Ekle</button>
+                    <button onclick="deleteAllUsers()" class="btn btn-danger">🗑️ Tümünü Sil</button>
+                </div>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Kullanıcı Adı</th>
+                            <th>Ad Soyad</th>
+                            <th>Unvan</th>
+                            <th>Sıra No</th>
+                            <th>Yetki</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Logo Yönetimi -->
+        <div class="admin-section">
+            <div class="section-header"><h2>Logo Yönetimi</h2></div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <div><img id="currentLogo" src="/img/logo.png" alt="Mevcut Logo" style="max-height: 60px;" onerror="this.style.display='none'"></div>
+                <div>
+                    <input type="file" id="logoInput" accept="image/*" style="display: none;">
+                    <button onclick="document.getElementById('logoInput').click()" class="btn btn-primary">Yeni Logo Yükle</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tek Kullanıcı Ekleme Modalı -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2>Yeni Kullanıcı</h2><button class="btn-close" onclick="closeModal('addUserModal')">✕</button></div>
+            <div class="form-group"><label>Kullanıcı Adı</label><input type="text" id="newUsername"></div>
+            <div class="form-group"><label>Ad</label><input type="text" id="newFirstName"></div>
+            <div class="form-group"><label>Soyad</label><input type="text" id="newLastName"></div>
+            <div class="form-group"><label>Unvan</label><input type="text" id="newTitle"></div>
+            <div class="form-group"><label>Sıra No</label><input type="number" id="newTitleOrder" value="100"></div>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeModal('addUserModal')">İptal</button>
+                <button class="btn btn-primary" onclick="addUser()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toplu Ekleme Modalı -->
+    <div id="bulkUserModal" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header"><h2>Toplu Ekleme</h2><button class="btn-close" onclick="closeModal('bulkUserModal')">✕</button></div>
+            <p style="font-size:0.9rem">Format: <code>kullanici_adi,ad,soyad,unvan,sira_no</code></p>
+            <textarea id="bulkUserData" rows="10" placeholder="ali.veli,Ali,Veli,Müdür,10..."></textarea>
+            <div class="form-actions">
+                <button class="btn btn-secondary" onclick="closeModal('bulkUserModal')">İptal</button>
+                <button class="btn btn-success" onclick="bulkAddUsers()">Yükle</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap - Kurumsal İletişim</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .login-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .logo-img {
+            height: 100px;
+            object-fit: contain;
+        }
+        .step-container { display: none; animation: fadeIn 0.4s ease; }
+        .step-container.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <!-- Logo (Ortalanmış) -->
+        <div class="logo-container">
+            <img src="/img/logo.png" onerror="this.src='https://via.placeholder.com/150x80?text=LOGO'" alt="Kurum Logosu" class="logo-img">
+        </div>
+        
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Kurumsal İletişim</h2>
+        <p class="text-gray-500 text-sm mb-8">Lütfen giriş bilgilerinizi giriniz</p>
+
+        <!-- 1. GİRİŞ FORMU -->
+        <div id="step-login" class="step-container active">
+            <form id="loginForm" class="text-left">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Kullanıcı Adı</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-user"></i></span>
+                        <input type="text" id="username" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="kullanici.adi" required>
+                    </div>
+                </div>
+                
+                <div class="mb-2">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Şifre</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="password" class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div class="text-right mb-6">
+                    <button type="button" onclick="forgotPassword()" class="text-sm text-blue-600 hover:text-blue-800 hover:underline font-medium">
+                        Şifremi Unuttum?
+                    </button>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:-translate-y-0.5">
+                    Giriş Yap
+                </button>
+            </form>
+        </div>
+
+        <!-- 2. SÖZLEŞME ONAYI -->
+        <div id="step-terms" class="step-container text-left">
+            <h3 class="text-lg font-bold text-gray-800 mb-3 border-b pb-2">Kullanıcı Sözleşmesi</h3>
+            <div class="bg-gray-50 border rounded p-3 h-48 overflow-y-auto text-xs text-gray-600 mb-4 leading-relaxed">
+                <p class="font-bold">1. Genel Hükümler</p>
+                <p>Bu sistem kurumsal iletişim ve dosya paylaşımı için tasarlanmıştır.</p>
+                <br>
+                <p class="font-bold">2. Sorumluluklar</p>
+                <p>Hesap güvenliğinden kullanıcı sorumludur. Şifrenizi paylaşmayınız.</p>
+                <br>
+                <p class="font-bold">3. Gizlilik</p>
+                <p>Tüm mesajlar ve paylaşılan dosyalar kurum içi gizliliğe tabidir.</p>
+                <br>
+                <p class="font-bold">4. Yaptırımlar</p>
+                <p>Uygunsuz kullanım tespit edildiğinde hesap kapatılabilir.</p>
+            </div>
+            <div class="flex items-center mb-4">
+                <input id="agreeTerms" type="checkbox" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                <label for="agreeTerms" class="ml-2 block text-sm text-gray-900">Okudum, kabul ediyorum</label>
+            </div>
+            <button onclick="acceptTerms()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed" id="btnAcceptTerms" disabled>Onayla ve Devam Et</button>
+        </div>
+
+        <!-- 3. ZORUNLU ŞİFRE DEĞİŞTİRME -->
+        <div id="step-password" class="step-container text-left">
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                <div class="flex">
+                    <div class="flex-shrink-0"><i class="fas fa-exclamation-triangle text-yellow-400"></i></div>
+                    <div class="ml-3"><p class="text-sm text-yellow-700">İlk girişinizde şifrenizi değiştirmeniz gerekmektedir.</p></div>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Yeni Şifre</label>
+                <input type="password" id="newPass" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-200" placeholder="En az 4 karakter">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Yeni Şifre (Tekrar)</label>
+                <input type="password" id="newPassConfirm" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-200">
+            </div>
+            <button onclick="changePassword()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">Şifreyi Değiştir</button>
+        </div>
+    </div>
+
+    <script>
+        function showStep(stepId) {
+            document.querySelectorAll('.step-container').forEach(el => el.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        // Giriş İşlemi
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    if (data.nextStep === 'terms') showStep('step-terms');
+                    else if (data.nextStep === 'change_password') showStep('step-password');
+                    else window.location.href = '/index.html';
+                } else {
+                    alert(data.message || 'Giriş başarısız');
+                }
+            } catch (err) { console.error(err); alert('Sunucu hatası'); }
+        });
+
+        // Şifremi Unuttum
+        async function forgotPassword() {
+            const username = document.getElementById('username').value.trim();
+            
+            if (!username) {
+                alert('Şifrenizin sıfırlanması için lütfen "Kullanıcı Adı" alanını doldurunuz.');
+                document.getElementById('username').focus();
+                return;
+            }
+
+            if (!confirm(username + ' kullanıcısı için şifre sıfırlama talebi gönderilsin mi?')) return;
+
+            try {
+                const res = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+                
+                if (res.ok) {
+                    alert('Şifrenizin sıfırlanması için Sistem Yöneticisine mesaj gönderilmiştir.');
+                } else {
+                    const data = await res.json();
+                    alert(data.message || 'Bir hata oluştu.');
+                }
+            } catch (err) { alert('İşlem başarısız.'); }
+        }
+
+        // Diğer Fonksiyonlar
+        document.getElementById('agreeTerms').addEventListener('change', function() {
+            document.getElementById('btnAcceptTerms').disabled = !this.checked;
+        });
+
+        async function acceptTerms() {
+            const res = await fetch('/api/auth/accept-terms', { method: 'POST' });
+            if (res.ok) location.reload();
+        }
+
+        async function changePassword() {
+            const p1 = document.getElementById('newPass').value;
+            const p2 = document.getElementById('newPassConfirm').value;
+            if (p1.length < 4) return alert('En az 4 karakter olmalı');
+            if (p1 !== p2) return alert('Şifreler uyuşmuyor');
+
+            const res = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newPassword: p1 })
+            });
+            
+            if (res.ok) {
+                alert('Şifreniz değişti. Yönlendiriliyorsunuz...');
+                window.location.href = '/index.html';
+            }
+        }
+    </script>
+</body>
+</html>
