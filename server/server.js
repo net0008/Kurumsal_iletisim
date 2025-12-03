@@ -1,7 +1,5 @@
-// Versiyon: 1.0 (Kararlı Sürüm - Düzeltilmiş)
-// Tarih: 03.12.2025
-// Açıklama: Temel sunucu yapılandırması, Socket.io entegrasyonu ve veritabanı bağlantısı.
-// Düzeltme: Frontend kodları temizlendi.
+// Versiyon: 1.2
+// Değişiklikler: 'io' nesnesi Rotalar (Routes) tarafından erişilebilir hale getirildi (app.set).
 
 const express = require('express');
 const http = require('http');
@@ -24,7 +22,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// Veritabanı Bağlantısı
+// Veritabanı
 connectDB();
 
 // Middleware
@@ -34,26 +32,32 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Session Ayarları
+// Session
 const sessionMiddleware = session({
   secret: 'corporate-chat-secret-key-2024',
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    maxAge: 24 * 60 * 60 * 1000, // 24 saat
-    secure: false, // Localhost için false
+    maxAge: 24 * 60 * 60 * 1000, 
+    secure: false, 
     httpOnly: true
   }
 });
 
 app.use(sessionMiddleware);
 
-// Socket.io ile Session Paylaşımı
+// Socket Session Entegrasyonu
 io.use((socket, next) => {
   sessionMiddleware(socket.request, {}, next);
 });
 
-// API Rotaları
+// --- ÖNEMLİ GÜNCELLEME BURADA ---
+// Socket.io nesnesini Express uygulamasına kaydediyoruz.
+// Böylece routes/announcements.js içinden erişebileceğiz.
+app.set('io', io); 
+// --------------------------------
+
+// Rotaları Tanımla
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
@@ -61,23 +65,19 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Socket.io Mantığı
+// Socket Mantığı
 io.on('connection', (socket) => {
-  // Kullanıcı Online Oldu
   socket.on('user-online', async (userId) => {
     if(!userId) return;
     socket.userId = userId;
-    
     await User.findByIdAndUpdate(userId, { isOnline: true, lastActivity: Date.now() });
     io.emit('user-status-change', { userId, isOnline: true });
   });
 
-  // Mesaj Gönderimi
   socket.on('send-message', (data) => {
     io.emit('new-message', data);
   });
 
-  // Bağlantı Koptu
   socket.on('disconnect', async () => {
     if (socket.userId) {
       await User.findByIdAndUpdate(socket.userId, { isOnline: false });
@@ -89,11 +89,9 @@ io.on('connection', (socket) => {
 // Sistem Başlangıç Temizliği
 async function resetSystemStatus() {
     try {
-        // Her başlangıçta herkesi offline yap (Hayalet oturumları temizle)
         await User.updateMany({}, { isOnline: false });
-        console.log("✅ Sistem v1.0 Başlatıldı: Tüm kullanıcılar offline yapıldı.");
+        console.log("✅ Sistem Başlatıldı: Kullanıcı durumları sıfırlandı.");
 
-        // Admin Kontrolü
         const adminExists = await User.findOne({ username: 'admin' });
         if (!adminExists) {
             await User.create({
@@ -106,12 +104,11 @@ async function resetSystemStatus() {
                 role: 'admin',
                 firstLogin: false
             });
-            console.log('✅ Varsayılan admin hesabı oluşturuldu.');
+            console.log('✅ Varsayılan admin oluşturuldu.');
         }
     } catch (err) { console.error('Başlangıç hatası:', err); }
 }
 
-// Sunucuyu Başlat
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
   console.log(`Server çalışıyor: http://localhost:${PORT}`);
