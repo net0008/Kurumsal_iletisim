@@ -1,3 +1,6 @@
+/* Versiyon: 1.1 */
+/* Değişiklikler: Takvim stilleri ve duyuru kartı detayları eklendi. */
+
 :root {
     --primary-color: #4a90e2;
     --secondary-color: #f5f6fa;
@@ -20,7 +23,7 @@ body {
     overflow: hidden;
 }
 
-/* --- Layout (Genel Düzen) --- */
+/* --- Layout --- */
 #app { display: flex; flex-direction: column; height: 100%; }
 
 .app-header {
@@ -30,6 +33,7 @@ body {
     padding: 0 20px;
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    flex-shrink: 0;
 }
 .header-left { display: flex; align-items: center; gap: 15px; }
 .header-logo { height: 40px; }
@@ -37,7 +41,7 @@ body {
 
 .main-content { display: flex; flex: 1; overflow: hidden; }
 
-/* Paneller (3 Sütunlu Sohbet Yapısı) */
+/* Paneller */
 .left-panel { width: 300px; background: var(--panel-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
 .center-panel { flex: 1; background: #eef2f5; position: relative; display: flex; flex-direction: column; }
 .right-panel { width: 300px; background: var(--panel-bg); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; }
@@ -60,7 +64,7 @@ body {
 .avatar {
     width: 40px; height: 40px; background: var(--primary-color); color: white;
     border-radius: 50%; display: flex; justify-content: center; align-items: center;
-    font-weight: bold; position: relative;
+    font-weight: bold; position: relative; flex-shrink: 0;
 }
 .status-dot {
     width: 10px; height: 10px; background: #ccc; border-radius: 50%;
@@ -69,9 +73,9 @@ body {
 .status-dot.online { background: var(--success-color); }
 
 .user-info { flex: 1; overflow: hidden; display: flex; justify-content: space-between; align-items: center;}
-.user-details { overflow: hidden; }
+.user-details { overflow: hidden; flex: 1; }
 .user-fullname { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-title { font-size: 0.75rem; color: #7f8c8d; }
+.user-title { font-size: 0.75rem; color: #7f8c8d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .unread-badge {
     background: var(--danger-color); color: white; font-size: 0.7rem;
@@ -79,13 +83,13 @@ body {
 }
 
 /* Sohbet Alanı */
-.default-view { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.6; }
-.center-logo { width: 150px; margin-bottom: 20px; }
+.default-view { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.8; }
+.center-logo { width: 150px; margin-bottom: 20px; opacity: 0.5; }
 
 .chat-window { display: flex; flex-direction: column; height: 100%; }
 .chat-header {
     height: 60px; background: white; border-bottom: 1px solid var(--border-color);
-    display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
+    display: flex; justify-content: space-between; align-items: center; padding: 0 20px; flex-shrink: 0;
 }
 .chat-messages { flex: 1; padding: 20px; overflow-y: auto; background-color: #eef2f5; display: flex; flex-direction: column; gap: 10px; }
 
@@ -94,8 +98,10 @@ body {
 .message.received { align-self: flex-start; background: white; border: 1px solid #ddd; border-bottom-left-radius: 2px; }
 .message-time { font-size: 0.7rem; margin-top: 5px; opacity: 0.7; text-align: right; }
 
-.chat-input { padding: 15px; background: white; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: flex-end; }
+.chat-input { padding: 15px; background: white; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; }
 textarea { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 10px 15px; resize: none; outline: none; font-family: inherit; }
+
+/* --- YENİ EKLENENLER (v1.1) --- */
 
 /* Duyurular */
 .announcement-list { padding: 15px; overflow-y: auto; flex: 1; }
@@ -104,38 +110,54 @@ textarea { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 10px 1
     margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .announcement-title { font-weight: bold; color: #d35400; font-size: 0.9rem; }
-.announcement-text { font-size: 0.85rem; margin-top: 5px; }
-.announcement-date { font-size: 0.7rem; color: #7f8c8d; text-align: right; margin-top: 5px; }
+.announcement-text { font-size: 0.85rem; margin-top: 5px; color: #333; white-space: pre-wrap; }
 
-/* --- Admin Paneli --- */
-.admin-container { padding: 30px; max-width: 1400px; margin: 0 auto; height: 100vh; overflow-y: auto; }
-.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-.stat-card { background: var(--panel-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; }
-.stat-value { font-size: 32px; font-weight: bold; color: var(--primary-color); }
-.admin-section { background: var(--panel-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; }
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); }
+/* Duyuru Alt Bilgi */
+.announcement-meta {
+    margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 5px;
+    font-size: 0.7rem; color: #7f8c8d; display: flex; justify-content: space-between; align-items: flex-end;
+}
+.meta-info { display: flex; flex-direction: column; gap: 2px; }
+.meta-author { font-weight: bold; color: #555; }
 
-/* Tablolar */
-.user-table, .log-table { width: 100%; border-collapse: collapse; }
-.user-table th, .user-table td, .log-table th, .log-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
-.user-table th { background-color: var(--bg-color); font-weight: 600; }
+/* Silme Butonu */
+.delete-ann-btn {
+    background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 1rem; padding: 0 5px;
+}
+.delete-ann-btn:hover { color: #c0392b; transform: scale(1.1); }
 
-/* Ortak Bileşenler */
-.btn { border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; text-decoration: none; display: inline-block;}
+/* Takvim */
+.calendar-wrapper {
+    padding: 15px; background: #fff; border-top: 1px solid var(--border-color);
+    margin-top: auto; /* En alta sabitle */
+    flex-shrink: 0;
+}
+.calendar-header {
+    text-align: center; font-weight: bold; color: var(--primary-color); margin-bottom: 10px; font-size: 0.9rem;
+}
+.calendar-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; font-size: 0.75rem;
+}
+.calendar-day-name { font-weight: bold; color: #888; padding-bottom: 5px; }
+.calendar-day { padding: 5px; border-radius: 3px; cursor: default; }
+.calendar-day.today { background: var(--primary-color); color: white; font-weight: bold; }
+.calendar-day:hover:not(.empty):not(.today) { background: #f0f0f0; }
+.calendar-day.empty { background: transparent; }
+
+/* Ortak */
+.btn { border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; font-size: 0.9rem; transition: 0.2s; }
 .btn-primary { background: var(--primary-color); color: white; }
 .btn-secondary { background: #95a5a6; color: white; }
 .btn-danger { background: var(--danger-color); color: white; }
 .btn-success { background: var(--success-color); color: white; }
 .btn-sm { font-size: 0.8rem; padding: 5px 10px; }
 .btn-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #7f8c8d; }
-
 .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
 .modal.active { display: flex; }
-.modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+.modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px; max-width: 90%; }
 .modal-large { width: 800px; }
 .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
 .form-group { margin-bottom: 15px; }
 .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
-.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+.form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }

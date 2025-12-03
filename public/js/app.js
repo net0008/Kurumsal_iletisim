@@ -1,3 +1,6 @@
+// Versiyon: 1.1
+// Değişiklikler: Takvim oluşturma (renderCalendar) ve Gelişmiş Duyuru Listeleme (Yazar/Tarih/Silme Yetkisi)
+
 const socket = io();
 let currentUser = null;
 let selectedUser = null;
@@ -11,8 +14,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         initListeners();
         loadUsers(); 
         loadAnnouncements();
+        renderCalendar(); // Takvimi Başlat
     } catch(e) { 
-        // Hata varsa login sayfasına yönlendir (Login sayfası hariç)
+        // Hata varsa login sayfasına yönlendir
         if(!window.location.href.includes('login')) window.location.href = '/login.html'; 
     }
 });
@@ -25,21 +29,17 @@ async function getCurrentUser() {
     currentUser = data.user;
     
     // Header Bilgileri
-    const nameDisplay = document.getElementById('currentUserName');
-    if (nameDisplay) nameDisplay.innerText = currentUser.fullName || currentUser.username;
-    
+    document.getElementById('currentUserName').innerText = currentUser.fullName || currentUser.username;
     const titleEl = document.getElementById('user-title-display');
-    if (titleEl) titleEl.innerText = currentUser.title || '';
+    if(titleEl) titleEl.innerText = currentUser.title || '';
 
     // Admin Butonları
     if(currentUser.isAdmin) {
-        const adminBtn = document.getElementById('adminBtn');
-        const addAnnBtn = document.getElementById('addAnnouncementBtn');
-        if(adminBtn) adminBtn.style.display = 'block';
-        if(addAnnBtn) addAnnBtn.style.display = 'block';
+        document.getElementById('adminBtn').style.display = 'block';
     }
     
-    // ÖNEMLİ DÜZELTME: .id yerine ._id kullanıyoruz
+    // Duyuru ekleme butonu artık herkese açık olduğu için gizleme yapmıyoruz.
+    
     socket.emit('user-online', currentUser._id);
 }
 
@@ -48,40 +48,36 @@ async function getCurrentUser() {
 // ==========================================
 function initListeners() {
     // Mesaj Gönderme
-    const send = () => sendMessage();
     const sendBtn = document.getElementById('sendMessageBtn');
-    const msgInput = document.getElementById('messageInput');
+    if (sendBtn) sendBtn.addEventListener('click', sendMessage);
 
-    if(sendBtn) sendBtn.addEventListener('click', send);
-    if(msgInput) {
+    const msgInput = document.getElementById('messageInput');
+    if (msgInput) {
         msgInput.addEventListener('keydown', (e) => {
-            if(e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault(); 
-                send(); 
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
             }
         });
     }
 
     // Dosya Yükleme
     const fileInput = document.getElementById('chatFileInput');
-    if(fileInput) fileInput.addEventListener('change', uploadFile);
+    if (fileInput) fileInput.addEventListener('change', uploadFile);
 
     // Duyuru Modalı
     const modal = document.getElementById('announcementModal');
     const addAnnBtn = document.getElementById('addAnnouncementBtn');
-    if(addAnnBtn && modal) {
+    if (addAnnBtn) {
         addAnnBtn.addEventListener('click', () => modal.classList.add('active'));
     }
-    
-    // Global Modal Kapatma
-    window.closeModal = (id) => {
-        const el = document.getElementById(id);
-        if(el) el.classList.remove('active');
-    };
+
+    // Modal Kapatma
+    window.closeModal = (id) => document.getElementById(id).classList.remove('active');
     
     // Çıkış
     const logoutBtn = document.getElementById('logoutBtn');
-    if(logoutBtn) {
+    if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             await fetch('/api/auth/logout', { method: 'POST' });
             window.location.href = '/login.html';
@@ -90,7 +86,7 @@ function initListeners() {
 
     // Sohbeti Kapat
     const closeChatBtn = document.getElementById('closeChatBtn');
-    if(closeChatBtn) {
+    if (closeChatBtn) {
         closeChatBtn.addEventListener('click', () => {
             document.getElementById('chatWindow').style.display = 'none';
             document.getElementById('defaultView').style.display = 'flex';
@@ -111,7 +107,6 @@ async function loadUsers() {
         
         if(!list) return;
 
-        // FİLTRE: Kendimizi listeden gizle (String çevirimi ile garanti karşılaştırma)
         const currentUserIdStr = String(currentUser._id);
 
         list.innerHTML = users
@@ -119,11 +114,8 @@ async function loadUsers() {
             .map(user => {
                 const isActive = selectedUser && selectedUser._id === user._id ? 'active' : '';
                 const initial = (user.firstName?.[0] || user.username[0]).toUpperCase();
-                
-                // Online durumu (Yeşil nokta)
                 const statusDot = user.isOnline ? '<div class="status-dot online"></div>' : '';
                 
-                // Eğer kullanıcı seçiliyse badge gösterme
                 const showBadge = user.unreadCount > 0 && (!selectedUser || selectedUser._id !== user._id);
                 const badgeHtml = showBadge 
                     ? `<div class="unread-badge" id="badge-${user._id}">${user.unreadCount}</div>` 
@@ -147,24 +139,19 @@ async function loadUsers() {
 }
 
 // ==========================================
-// 4. SOHBET SEÇİMİ
+// 4. SOHBET İŞLEMLERİ
 // ==========================================
 async function selectUser(user) {
     selectedUser = user;
     
-    // Rozeti gizle
     const badge = document.getElementById(`badge-${user._id}`);
     if(badge) { badge.style.display = 'none'; badge.innerText = '0'; }
     
-    // Görsel vurguyu güncelle
     document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active'));
-    const activeItem = document.getElementById(`user-${user._id}`);
-    if(activeItem) activeItem.classList.add('active');
+    document.getElementById(`user-${user._id}`)?.classList.add('active');
 
-    // Görünüm Değiştir
     document.getElementById('defaultView').style.display = 'none';
     document.getElementById('chatWindow').style.display = 'flex';
-    
     document.getElementById('chatUserName').innerText = user.fullName || user.username;
     
     const statusEl = document.getElementById('chatUserStatus');
@@ -174,7 +161,6 @@ async function selectUser(user) {
     }
 
     try {
-        // Mesajları Çek
         const res = await fetch(`/api/messages/${user._id}`);
         const msgs = await res.json();
         
@@ -188,10 +174,7 @@ async function selectUser(user) {
             }
             scrollToBottom();
         }
-        
-        // Listeyi sessizce yenile (Okundu bilgisini güncellemek için)
         loadUsers(); 
-
     } catch(e) { console.error(e); }
 }
 
@@ -252,7 +235,6 @@ function addMessageUI(msg) {
     if(!area) return;
     if (area.innerHTML.includes('Henüz mesaj yok')) area.innerHTML = '';
 
-    // Karşılaştırma yaparken ID'leri stringe çevirip kontrol ediyoruz
     const currentUserIdStr = String(currentUser._id || currentUser.id);
     const msgSenderIdStr = String(msg.sender._id || msg.sender);
 
@@ -274,7 +256,7 @@ function addMessageUI(msg) {
 }
 
 // ==========================================
-// 5. DUYURULAR
+// 5. DUYURULAR (GELİŞMİŞ)
 // ==========================================
 async function loadAnnouncements() {
     try {
@@ -288,13 +270,28 @@ async function loadAnnouncements() {
             return;
         }
 
-        list.innerHTML = data.map(ann => `
+        list.innerHTML = data.map(ann => {
+            const dateStr = new Date(ann.createdAt).toLocaleString('tr-TR');
+            // Yazar bilgisini kontrol et
+            const author = ann.createdBy ? (ann.createdBy.fullName || ann.createdBy.username) : 'Bilinmeyen';
+            
+            // Silme Yetkisi: Admin veya Yazan Kişi
+            const isCreator = ann.createdBy && (String(ann.createdBy._id) === String(currentUser._id));
+            const canDelete = currentUser.isAdmin || isCreator;
+
+            return `
             <div class="announcement-card">
                 <div class="announcement-title">${ann.title}</div>
                 <div class="announcement-text">${ann.content}</div>
-                <div class="announcement-date">${new Date(ann.createdAt).toLocaleDateString()}</div>
-            </div>
-        `).join('');
+                <div class="announcement-meta">
+                    <div class="meta-info">
+                        <span class="meta-author"><i class="fas fa-user-edit"></i> ${author}</span>
+                        <span><i class="fas fa-clock"></i> ${dateStr}</span>
+                    </div>
+                    ${canDelete ? `<button class="delete-ann-btn" onclick="deleteAnnouncement('${ann._id}')" title="Sil"><i class="fas fa-trash-alt"></i></button>` : ''}
+                </div>
+            </div>`;
+        }).join('');
     } catch (e) { console.error(e); }
 }
 
@@ -305,54 +302,93 @@ window.saveAnnouncement = async function() {
 
     try {
         const res = await fetch('/api/announcements', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, content })
         });
+        
         if (res.ok) {
-            const modal = document.getElementById('announcementModal');
-            if(modal) modal.classList.remove('active');
-            
+            document.getElementById('announcementModal').classList.remove('active');
             document.getElementById('annTitle').value = '';
             document.getElementById('annContent').value = '';
             loadAnnouncements();
+        } else {
+            alert("Duyuru kaydedilemedi.");
         }
-    } catch (e) { console.error(e); }
+    } catch(e) { console.error(e); }
+};
+
+window.deleteAnnouncement = async function(id) {
+    if(!confirm('Bu duyuruyu silmek istediğinize emin misiniz?')) return;
+    try {
+        const res = await fetch(`/api/announcements/${id}`, { method: 'DELETE' });
+        if(res.ok) loadAnnouncements();
+        else alert('Yetkiniz yok');
+    } catch(e) { alert('Hata'); }
 };
 
 // ==========================================
-// 6. SOCKET EVENTS
+// 6. TAKVİM (YENİ ÖZELLİK)
+// ==========================================
+function renderCalendar() {
+    const container = document.getElementById('calendar');
+    if(!container) return;
+    
+    const date = new Date();
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    const today = date.getDate();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const days = ["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pz"];
+    
+    let html = `<div class="calendar-header">${monthNames[month]} ${year}</div><div class="calendar-grid">`;
+    days.forEach(d => html += `<div class="calendar-day-name">${d}</div>`);
+    
+    // Pazartesi 1, Pazar 0. Türk takvimine göre Pazar'ı 7 kabul edelim
+    let startDay = firstDay.getDay();
+    if(startDay === 0) startDay = 7;
+    
+    // Boş kutular (Ayın başındaki boşluklar)
+    for(let i=1; i<startDay; i++) html += `<div class="calendar-day empty"></div>`;
+    
+    // Günler
+    for(let i=1; i<=lastDay.getDate(); i++) {
+        const isToday = i === today ? 'today' : '';
+        html += `<div class="calendar-day ${isToday}">${i}</div>`;
+    }
+    
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+// ==========================================
+// 7. SOCKET EVENTS
 // ==========================================
 socket.on('new-message', (msg) => {
     const currentUserIdStr = String(currentUser._id || currentUser.id);
     const msgSenderIdStr = String(msg.sender._id || msg.sender);
     
-    // Eğer şu an o kişiyle konuşuyorsak
+    // Eğer sohbet o kişiyle açıksa mesajı ekle
     if (selectedUser && (msgSenderIdStr === String(selectedUser._id) || msgSenderIdStr === currentUserIdStr)) {
-        // Sadece karşıdan geleni veya kendi attığımızı ekrana bas (tekrarı önlemek için)
-        // addMessageToUI fonksiyonu zaten ekliyor, burada sadece karşıdan geleni ekleyelim
         if (msgSenderIdStr === String(selectedUser._id)) {
-             addMessageToUI(msg); // Helper fonksiyonu aşağıda
+             addMessageToUI(msg);
              scrollToBottom();
         }
     } else {
-        // Başkasından geldiyse badge artır
+        // Değilse badge (rozet) sayısını artır
         if (msgSenderIdStr !== currentUserIdStr) {
             const badge = document.getElementById(`badge-${msg.sender}`);
             if (badge) {
                 let count = parseInt(badge.innerText || '0');
                 badge.innerText = count + 1;
                 badge.style.display = 'inline-block';
-            } else {
-                // Kullanıcı listede yoksa (yeni online olduysa)
-                loadUsers();
-            }
+            } else loadUsers();
         }
     }
 });
-
-// Helper fonksiyon
-function addMessageToUI(msg) {
-     addMessageUI(msg);
-}
 
 socket.on('user-status-change', () => loadUsers());

@@ -16,7 +16,6 @@
                 <h1 style="font-size:1.2rem; font-weight:bold;">Kurumsal Sohbet</h1>
             </div>
             <div class="header-right">
-                <!-- Kullanıcı Bilgisi ve Ünvan Alanı -->
                 <div style="text-align:right; margin-right:15px; line-height:1.2;">
                     <div id="currentUserName" style="font-weight:bold; font-size:0.9rem;">Yükleniyor...</div>
                     <div id="user-title-display" style="font-size:0.75rem; color:#666;">...</div>
@@ -40,7 +39,7 @@
 
             <!-- ORTA PANEL: Sohbet -->
             <main class="center-panel">
-                <!-- Varsayılan Görünüm -->
+                <!-- Varsayılan Görünüm (Logo) -->
                 <div id="defaultView" class="default-view">
                     <img src="/img/logo.png" onerror="this.style.display='none'" class="center-logo" alt="Logo">
                     <p class="welcome-text">Sohbet etmek için kişi seçiniz</p>
@@ -74,9 +73,13 @@
             <aside class="right-panel">
                 <div class="panel-header">
                     <h2>Duyuru Panosu</h2>
-                    <button id="addAnnouncementBtn" class="btn btn-sm btn-success" style="display:none;">+ Ekle</button>
+                    <!-- Ekleme butonu artık herkes için görünür -->
+                    <button id="addAnnouncementBtn" class="btn btn-sm btn-success">+ Ekle</button>
                 </div>
                 <div id="announcementList" class="announcement-list"></div>
+                
+                <!-- YENİ: TAKVİM ALANI -->
+                <div id="calendar" class="calendar-wrapper"></div>
             </aside>
         </div>
     </div>

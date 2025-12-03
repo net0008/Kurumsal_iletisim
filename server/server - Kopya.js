@@ -1,7 +1,6 @@
-// Versiyon: 1.0 (Kararlı Sürüm - Düzeltilmiş)
+// Versiyon: 1.0 (Kararlı Sürüm)
 // Tarih: 03.12.2025
 // Açıklama: Temel sunucu yapılandırması, Socket.io entegrasyonu ve veritabanı bağlantısı.
-// Düzeltme: Frontend kodları temizlendi.
 
 const express = require('express');
 const http = require('http');

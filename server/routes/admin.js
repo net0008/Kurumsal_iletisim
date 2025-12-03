@@ -1,105 +1,70 @@
+// Versiyon: 1.1 - Admin Rotaları
+// Düzeltme: Frontend kodları temizlendi, backend rotaları eklendi.
+
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Modeller
 const User = require('../models/User');
 const Message = require('../models/Message');
+const Announcement = require('../models/Announcement');
+const File = require('../models/File');
+
+// Middleware
 const { requireAuth } = require('../middleware/auth');
 const isAdmin = require('../middleware/admin');
 
-router.use(requireAuth);
+// Tüm admin rotaları korumalıdır
+router.use(requireAuth, isAdmin);
 
-// Kullanıcıları Listele (Okunmamış Mesaj Sayılarıyla)
-router.get('/', async (req, res) => {
+// İstatistikleri Getir
+router.get('/stats', async (req, res) => {
     try {
-        const users = await User.find().select('-password').sort({ isOnline: -1, titleOrder: 1, firstName: 1 });
-        
-        // Her kullanıcı için okunmamış mesaj sayısını hesapla
-        const usersWithCounts = await Promise.all(users.map(async (user) => {
-            const userObj = user.toObject();
-            if (req.session.userId) {
-                const count = await Message.countDocuments({
-                    sender: user._id,
-                    target: req.session.userId,
-                    read: false
-                });
-                userObj.unreadCount = count;
-            }
-            return userObj;
-        }));
+        const totalUsers = await User.countDocuments();
+        const onlineUsers = await User.countDocuments({ isOnline: true });
+        const totalMessages = await Message.countDocuments();
+        const totalAnnouncements = await Announcement.countDocuments();
+        const totalFiles = await File.countDocuments();
 
-        res.json(usersWithCounts);
-    } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-// Tek Kullanıcı Ekle (Sadece Admin)
-router.post('/add', isAdmin, async (req, res) => {
-    try {
-        const { username, firstName, lastName, title, titleOrder } = req.body;
-        const salt = await bcrypt.genSalt(10);
-        const password = await bcrypt.hash('1234', salt); // Varsayılan şifre
-        
-        await User.create({
-            username, 
-            firstName, 
-            lastName, 
-            fullName: `${firstName} ${lastName}`, 
-            title, 
-            titleOrder: parseInt(titleOrder) || 100, 
-            password 
+        res.json({
+            totalUsers,
+            onlineUsers,
+            totalMessages,
+            totalAnnouncements,
+            totalFiles
         });
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ message: err.message }); }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
-// Toplu Kullanıcı Ekle (Sadece Admin)
-router.post('/bulk', isAdmin, async (req, res) => {
-    try {
-        const { users } = req.body;
-        const salt = await bcrypt.genSalt(10);
-        
-        // Mevcut kullanıcıları kontrol et (Çakışmayı önlemek için)
-        const existing = await User.find({ username: { $in: users.map(u => u.username) }});
-        const existingNames = existing.map(u => u.username);
-        
-        const newUsers = users
-            .filter(u => !existingNames.includes(u.username))
-            .map(u => ({
-                ...u,
-                password: bcrypt.hashSync('1234', salt) // Varsayılan şifre
-            }));
+// Logo Yükleme Ayarları
+const imgDir = path.join(__dirname, '../../public/img');
+if (!fs.existsSync(imgDir)) {
+    fs.mkdirSync(imgDir, { recursive: true });
+}
 
-        if(newUsers.length > 0) await User.insertMany(newUsers);
-        res.json({ count: newUsers.length });
-    } catch (err) { res.status(500).json({ message: err.message }); }
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, imgDir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, 'logo.png'); // Her zaman logo.png olarak kaydet
+    }
+});
+const upload = multer({ storage: storage });
+
+// Logo Yükleme Rotası
+router.post('/settings/logo', upload.single('logo'), (req, res) => {
+    res.json({ success: true, message: 'Logo güncellendi' });
 });
 
-// Tek Kullanıcı Sil (Sadece Admin)
-router.delete('/:id', isAdmin, async (req, res) => {
-    try {
-        if(req.params.id === req.user._id.toString()) return res.status(400).json({message: 'Kendinizi silemezsiniz'});
-        await User.findByIdAndDelete(req.params.id);
-        // İsteğe bağlı: Kullanıcının mesajlarını da silebilirsiniz
-        await Message.deleteMany({ $or: [{sender: req.params.id}, {target: req.params.id}] });
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-// Tüm Kullanıcıları Sil (Admin Hariç)
-router.delete('/delete-all', isAdmin, async (req, res) => {
-    try {
-        const result = await User.deleteMany({ _id: { $ne: req.user._id }, isAdmin: false });
-        res.json({ count: result.deletedCount });
-    } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-// Şifre Sıfırla (Admin)
-router.post('/reset-password/:id', isAdmin, async (req, res) => {
-    try {
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash('1234', salt);
-        await User.findByIdAndUpdate(req.params.id, { password: hash });
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ message: err.message }); }
+// Logları Getir (Placeholder - İleride eklenebilir)
+router.get('/logs', (req, res) => {
+    res.json({ logs: [] });
 });
 
 module.exports = router;
