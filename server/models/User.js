@@ -1,3 +1,4 @@
+// Versiyon: 1.1 (Profil Alanları Eklendi)
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -14,9 +15,12 @@ const UserSchema = new mongoose.Schema({
     isOnline: { type: Boolean, default: false },
     lastActivity: { type: Date, default: Date.now },
     
-    // YENİ EKLENEN ALANLAR
-    firstLogin: { type: Boolean, default: true }, // İlk girişte şifre değişimi için
-    agreedToTerms: { type: Boolean, default: false }, // Sözleşme onayı için
+    // --- YENİ EKLENEN ALANLAR ---
+    firstLogin: { type: Boolean, default: true },
+    agreedToTerms: { type: Boolean, default: false },
+    theme: { type: String, default: 'light' }, // light, dark, blue, green
+    profileImage: { type: String, default: '' }, // Profil resmi yolu
+    // ----------------------------
     
     createdAt: { type: Date, default: Date.now }
 });

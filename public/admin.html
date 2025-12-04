@@ -9,12 +9,18 @@
 </head>
 <body>
     <div class="admin-container">
+        
         <div class="admin-header">
-            <h1>⚙️ Admin Paneli</h1>
-            <button onclick="window.location.href='/'" class="btn btn-secondary">← Ana Sayfaya Dön</button>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <img src="/img/logo.png" onerror="this.style.display='none'" alt="Kurum Logosu" style="height: 50px; object-fit: contain;">
+                <h1 style="margin: 0; font-size: 1.5rem; color: var(--primary-color);">Yönetim Paneli</h1>
+            </div>
+            
+            <button onclick="window.location.href='/'" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Ana Sayfaya Dön
+            </button>
         </div>
         
-        <!-- İstatistikler -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value" id="totalUsers">0</div>
@@ -34,18 +40,17 @@
             </div>
         </div>
 
-        <!-- Kullanıcı Yönetimi -->
         <div class="admin-section">
             <div class="section-header">
-                <h2>Kullanıcı Yönetimi</h2>
-                <div>
-                    <button onclick="openModal('addUserModal')" class="btn btn-primary">+ Tek Ekle</button>
-                    <button onclick="openModal('bulkUserModal')" class="btn btn-success">📋 Toplu Ekle</button>
-                    <button onclick="deleteAllUsers()" class="btn btn-danger">🗑️ Tümünü Sil</button>
+                <h2><i class="fas fa-users-cog"></i> Kullanıcı Yönetimi</h2>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="openModal('addUserModal')" class="btn btn-primary"><i class="fas fa-plus"></i> Tek Ekle</button>
+                    <button onclick="openModal('bulkUserModal')" class="btn btn-success"><i class="fas fa-file-csv"></i> Toplu Ekle</button>
+                    <button onclick="deleteAllUsers()" class="btn btn-danger"><i class="fas fa-trash"></i> Tümünü Sil</button>
                 </div>
             </div>
             
-            <div style="overflow-x: auto;">
+            <div style="overflow-x: auto; max-height: 400px;">
                 <table class="user-table">
                     <thead>
                         <tr>
@@ -62,20 +67,75 @@
             </div>
         </div>
 
-        <!-- Logo Yönetimi -->
         <div class="admin-section">
-            <div class="section-header"><h2>Logo Yönetimi</h2></div>
-            <div style="display: flex; gap: 20px; align-items: center;">
-                <div><img id="currentLogo" src="/img/logo.png" alt="Mevcut Logo" style="max-height: 60px;" onerror="this.style.display='none'"></div>
+            <div class="section-header">
+                <h2><i class="fas fa-list-alt"></i> Sistem Logları</h2>
+                <button onclick="loadLogs()" class="btn btn-sm btn-secondary"><i class="fas fa-sync"></i> Yenile</button>
+            </div>
+            <div style="overflow-x: auto; max-height: 400px;">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Tarih/Saat</th>
+                            <th>Kullanıcı</th>
+                            <th>İşlem</th>
+                            <th>IP Adresi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr><td colspan="4" style="text-align:center; padding:20px;">Yükleniyor...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <div class="section-header"><h2><i class="fas fa-image"></i> Logo Yönetimi</h2></div>
+            <div style="display: flex; gap: 20px; align-items: center; padding: 10px;">
+                <div style="background: white; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    <img id="currentLogo" src="/img/logo.png" alt="Mevcut Logo" style="max-height: 60px;" onerror="this.style.display='none'">
+                </div>
                 <div>
                     <input type="file" id="logoInput" accept="image/*" style="display: none;">
-                    <button onclick="document.getElementById('logoInput').click()" class="btn btn-primary">Yeni Logo Yükle</button>
+                    <button onclick="document.getElementById('logoInput').click()" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Yeni Logo Yükle
+                    </button>
+                    <div style="margin-top: 5px; font-size: 0.8rem; opacity: 0.7;">PNG, JPG (Max 5MB)</div>
                 </div>
             </div>
         </div>
+
+        <div class="admin-section">
+            <div class="section-header">
+                <h2><i class="fas fa-search"></i> Sohbet İnceleme</h2>
+            </div>
+            <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap; padding:10px;">
+                <div style="flex:1; min-width: 200px;">
+                    <label style="font-size:0.8rem; font-weight:bold;">1. Kullanıcı</label>
+                    <select id="msgUser1" class="form-group" style="width:100%; padding:8px; margin-bottom:0;">
+                        <option value="">Seçiniz...</option>
+                    </select>
+                </div>
+                <div style="flex:1; min-width: 200px;">
+                    <label style="font-size:0.8rem; font-weight:bold;">2. Kullanıcı</label>
+                    <select id="msgUser2" class="form-group" style="width:100%; padding:8px; margin-bottom:0;">
+                        <option value="">Seçiniz...</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:flex-end;">
+                    <button onclick="inspectMessages()" class="btn btn-primary" style="height:38px; margin-top: 18px;">
+                        <i class="fas fa-eye"></i> Görüntüle
+                    </button>
+                </div>
+            </div>
+            
+            <div id="inspectorArea" style="height:300px; overflow-y:auto; border:1px solid var(--border-color); background:var(--bg-color); padding:15px; border-radius:5px; margin-top:10px; display:none;">
+                <p style="text-align:center; opacity: 0.6;">Görüntülemek için iki kullanıcı seçin.</p>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Tek Kullanıcı Ekleme Modalı -->
     <div id="addUserModal" class="modal">
         <div class="modal-content">
             <div class="modal-header"><h2>Yeni Kullanıcı</h2><button class="btn-close" onclick="closeModal('addUserModal')">✕</button></div>
@@ -91,12 +151,11 @@
         </div>
     </div>
 
-    <!-- Toplu Ekleme Modalı -->
     <div id="bulkUserModal" class="modal">
-        <div class="modal-content modal-large">
+        <div class="modal-content" style="width: 600px;">
             <div class="modal-header"><h2>Toplu Ekleme</h2><button class="btn-close" onclick="closeModal('bulkUserModal')">✕</button></div>
-            <p style="font-size:0.9rem">Format: <code>kullanici_adi,ad,soyad,unvan,sira_no</code></p>
-            <textarea id="bulkUserData" rows="10" placeholder="ali.veli,Ali,Veli,Müdür,10..."></textarea>
+            <p style="font-size:0.9rem; margin-bottom: 10px;">Format: <code>kullanici_adi,ad,soyad,unvan,sira_no</code></p>
+            <textarea id="bulkUserData" rows="10" placeholder="ali.veli,Ali,Veli,Müdür,10&#10;ayse.yilmaz,Ayşe,Yılmaz,Şef,20"></textarea>
             <div class="form-actions">
                 <button class="btn btn-secondary" onclick="closeModal('bulkUserModal')">İptal</button>
                 <button class="btn btn-success" onclick="bulkAddUsers()">Yükle</button>

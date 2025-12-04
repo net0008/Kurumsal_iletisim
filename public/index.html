@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kurumsal Sohbet Sistemi</title>
+    <title>Kurumsal İletişim Sistemi</title>
     <link rel="stylesheet" href="/css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -12,14 +12,23 @@
         <header class="app-header">
             <div class="header-left">
                 <img id="headerLogo" src="/img/logo.png" onerror="this.style.display='none'" class="header-logo" alt="Logo">
-                <h1 style="font-size:1.2rem; font-weight:bold;">Kurumsal Sohbet</h1>
+                <h1 style="font-size:1.1rem; font-weight:bold; color:var(--text-color);">Bergama İlçe Milli Eğitim Müdürlüğü</h1>
             </div>
+
+            <div class="header-center">
+                KURUMSAL İLETİŞİM SİSTEMİ
+            </div>
+
             <div class="header-right">
+                <div id="headerUserAvatar" class="avatar header-avatar">
+                    </div>
+
                 <div style="text-align:right; margin-right:15px; line-height:1.2;">
                     <div id="currentUserName" style="font-weight:bold; font-size:0.9rem;">Yükleniyor...</div>
                     <div id="user-title-display" style="font-size:0.75rem; color:#666;">...</div>
                 </div>
                 
+                <button id="profileBtn" class="btn btn-sm btn-primary">👤 Profilim</button>
                 <button id="adminBtn" class="btn btn-sm btn-secondary" style="display:none;" onclick="location.href='/admin.html'">⚙️ Admin</button>
                 <button id="logoutBtn" class="btn btn-sm btn-danger">Çıkış</button>
             </div>
@@ -40,7 +49,6 @@
             <main class="center-panel">
                 
                 <div class="chat-area-wrapper">
-                    
                     <div id="defaultView" class="default-view">
                         <img src="/img/logo.png" onerror="this.style.display='none'" class="center-logo" alt="Logo">
                         <p class="welcome-text">Sohbet etmek için kişi seçiniz</p>
@@ -67,6 +75,7 @@
                         </div>
                     </div>
                 </div> 
+
                 <div id="sharedFilesArea" class="shared-files-container">
                     <div class="files-list-section">
                         <h3 class="files-header"><i class="fas fa-folder-open"></i> Ortak Dosyalar</h3>
@@ -94,8 +103,7 @@
                     <button id="addAnnouncementBtn" class="btn btn-sm btn-success">+ Ekle</button>
                 </div>
                 
-                <div id="announcementList" class="announcement-list">
-                     </div>
+                <div id="announcementList" class="announcement-list"></div>
                 
                 <div id="calendar" class="calendar-wrapper"></div>
             </aside>
@@ -104,21 +112,48 @@
 
     <div id="announcementModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Yeni Duyuru</h2>
-                <button class="btn-close">✕</button>
-            </div>
-            <div class="form-group">
-                <label>Başlık</label>
-                <input type="text" id="annTitle">
-            </div>
-            <div class="form-group">
-                <label>İçerik</label>
-                <textarea id="annContent" rows="4"></textarea>
-            </div>
+            <div class="modal-header"><h2>Yeni Duyuru</h2><button class="btn-close">✕</button></div>
+            <div class="form-group"><label>Başlık</label><input type="text" id="annTitle"></div>
+            <div class="form-group"><label>İçerik</label><textarea id="annContent" rows="4"></textarea></div>
             <div class="form-actions">
                 <button class="btn btn-secondary btn-close">İptal</button>
                 <button class="btn btn-primary" onclick="saveAnnouncement()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal">
+        <div class="modal-content" style="width: 500px;">
+            <div class="modal-header"><h2><i class="fas fa-user-circle"></i> Profilim</h2><button class="btn-close profile-close">✕</button></div>
+            <div class="profile-tabs">
+                <button class="tab-btn active" onclick="switchTab('tab-general')">Genel</button>
+                <button class="tab-btn" onclick="switchTab('tab-theme')">Tema</button>
+                <button class="tab-btn" onclick="switchTab('tab-security')">Güvenlik</button>
+            </div>
+            <div id="tab-general" class="tab-content active">
+                <div style="text-align:center; margin: 20px 0;">
+                    <img id="previewAvatar" src="" class="profile-avatar-preview" onerror="this.src='https://via.placeholder.com/100'">
+                    <br>
+                    <input type="file" id="avatarInput" style="display:none" accept="image/*">
+                    <button onclick="document.getElementById('avatarInput').click()" class="btn btn-sm btn-primary" style="margin-top:10px;">Fotoğraf Seç</button>
+                    <button onclick="uploadAvatar()" class="btn btn-sm btn-success" style="margin-top:10px;">Kaydet</button>
+                </div>
+                <div class="form-group"><label>Ad Soyad</label><input type="text" id="profileFullName" disabled style="background:#f9f9f9;"></div>
+                <div class="form-group"><label>Unvan</label><input type="text" id="profileTitle" disabled style="background:#f9f9f9;"></div>
+            </div>
+            <div id="tab-theme" class="tab-content">
+                <p style="margin-bottom:15px; font-size:0.9rem; opacity:0.8;">Sistem temasını seçiniz:</p>
+                <div class="theme-grid">
+                    <div class="theme-option" onclick="setTheme('light')" style="background:#f8fafc; border:2px solid #2563eb; color:#1e293b;">Modern Mavi</div>
+                    <div class="theme-option" onclick="setTheme('dark')" style="background:#0f172a; border:2px solid #334155; color:#f1f5f9;">Gece Modu</div>
+                    <div class="theme-option" onclick="setTheme('gold')" style="background:#f9f8f4; border:2px solid #b48528; color:#3d342b;">Bergama Gold</div>
+                    <div class="theme-option" onclick="setTheme('teal')" style="background:#f0fdfa; border:2px solid #0d9488; color:#134e4a;">Okyanus</div>
+                </div>
+            </div>
+            <div id="tab-security" class="tab-content">
+                <div class="form-group"><label>Yeni Şifre</label><input type="password" id="newProfilePass"></div>
+                <div class="form-group"><label>Yeni Şifre (Tekrar)</label><input type="password" id="newProfilePassConfirm"></div>
+                <button onclick="changeProfilePassword()" class="btn btn-primary" style="width:100%">Şifreyi Değiştir</button>
             </div>
         </div>
     </div>

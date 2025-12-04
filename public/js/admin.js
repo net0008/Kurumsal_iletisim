@@ -1,219 +1,219 @@
-// Versiyon: 1.1 - Admin Paneli Mantığı
-// Düzeltmeler: 
-// 1. Hata yönetimi eklendi (try-catch blokları artık sessiz değil).
-// 2. CSV okuma mantığı "kullanici_adi,ad,soyad,unvan,sira_no" formatına sabitlendi.
-// 3. Silme işlemleri için geri bildirim eklendi.
+// Versiyon: 2.1 (Tema Desteği Eklendi)
+let allUsers = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadStats();
-    loadUsers();
+document.addEventListener('DOMContentLoaded', async () => {
+    await applyAdminTheme(); // YENİ: Temayı uygula
+    await loadStats();
+    await loadUsers(); 
+    await loadLogs();
     
-    const logoInput = document.getElementById('logoInput');
-    if(logoInput) logoInput.addEventListener('change', uploadLogo);
+    const logoIn = document.getElementById('logoInput');
+    if(logoIn) logoIn.addEventListener('change', uploadLogo);
 });
 
-function openModal(id) { document.getElementById(id).classList.add('active'); }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+// --- TEMA UYGULAMA (YENİ) ---
+async function applyAdminTheme() {
+    try {
+        const res = await fetch('/api/auth/me');
+        if(res.ok) {
+            const data = await res.json();
+            // Kullanıcının teması varsa body'ye uygula
+            if(data.user && data.user.theme) {
+                document.body.setAttribute('data-theme', data.user.theme);
+            }
+        }
+    } catch(e) { console.error("Tema yüklenemedi:", e); }
+}
 
-// İstatistikleri Getir
 async function loadStats() {
     try {
         const res = await fetch('/api/admin/stats');
-        if (!res.ok) throw new Error('Veri alınamadı');
-        
         const data = await res.json();
-        document.getElementById('totalUsers').innerText = data.totalUsers || 0;
-        document.getElementById('onlineUsers').innerText = data.onlineUsers || 0;
-        document.getElementById('totalMessages').innerText = data.totalMessages || 0;
-        document.getElementById('totalAnnouncements').innerText = data.totalAnnouncements || 0;
-    } catch(e) {
-        console.error("İstatistik hatası:", e);
-        // Hata olsa bile kullanıcıya yansıtma, 0 kalsın
-    }
+        document.getElementById('totalUsers').innerText = data.totalUsers;
+        document.getElementById('onlineUsers').innerText = data.onlineUsers;
+        document.getElementById('totalMessages').innerText = data.totalMessages;
+        document.getElementById('totalAnnouncements').innerText = data.totalAnnouncements;
+    } catch(e){}
 }
 
-// Kullanıcıları Listele
+// Kullanıcıları Yükle ve Selectbox'ları Doldur
 async function loadUsers() {
-    const tbody = document.getElementById('usersTableBody');
     try {
         const res = await fetch('/api/users');
-        if (!res.ok) throw new Error('Liste çekilemedi');
-        
         const users = await res.json();
+        allUsers = users;
         
-        if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">Kayıtlı kullanıcı bulunamadı.</td></tr>';
+        const tbody = document.getElementById('usersTableBody');
+        const select1 = document.getElementById('msgUser1');
+        const select2 = document.getElementById('msgUser2');
+        
+        tbody.innerHTML = '';
+        if(select1) select1.innerHTML = '<option value="">Seçiniz...</option>';
+        if(select2) select2.innerHTML = '<option value="">Seçiniz...</option>';
+
+        users.forEach(u => {
+            tbody.innerHTML += `
+            <tr>
+                <td>${u.username}</td>
+                <td>${u.fullName || u.firstName}</td>
+                <td>${u.title}</td>
+                <td>${u.titleOrder}</td>
+                <td>${u.isAdmin ? '<b style="color:var(--danger-color)">Admin</b>' : 'Personel'}</td>
+                <td>
+                    <button onclick="resetPassword('${u._id}')" class="btn btn-sm btn-secondary" title="Şifre Sıfırla">🔑</button>
+                    ${!u.isAdmin ? `<button onclick="deleteUser('${u._id}')" class="btn btn-sm btn-danger" title="Sil">🗑️</button>` : ''}
+                </td>
+            </tr>`;
+
+            const option = `<option value="${u._id}">${u.fullName} (${u.username})</option>`;
+            if(select1) select1.innerHTML += option;
+            if(select2) select2.innerHTML += option;
+        });
+
+    } catch(e) { console.error(e); }
+}
+
+async function loadLogs() {
+    try {
+        const res = await fetch('/api/admin/logs');
+        const data = await res.json();
+        const tbody = document.getElementById('logsTableBody');
+        
+        if(!tbody) return;
+        
+        if(data.logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:15px;">Henüz log kaydı yok.</td></tr>';
             return;
         }
 
-        tbody.innerHTML = users.map(u => `
+        const actionMap = {
+            'login': '<span style="color:var(--success-color)">Giriş</span>',
+            'logout': '<span style="color:var(--warning-color)">Çıkış</span>',
+            'password_change': 'Şifre Değişimi',
+            'terms_accepted': 'Sözleşme Onayı'
+        };
+
+        tbody.innerHTML = data.logs.map(log => `
             <tr>
-                <td>${u.username}</td>
-                <td>${u.fullName || (u.firstName + ' ' + u.lastName)}</td>
-                <td>${u.title || '-'}</td>
-                <td>${u.titleOrder || 100}</td>
-                <td>${u.isAdmin ? '<b style="color:red">Yönetici</b>' : 'Personel'}</td>
-                <td>
-                    ${!u.isAdmin ? `
-                        <button onclick="resetPassword('${u._id}')" class="btn btn-sm btn-secondary" title="Şifreyi 1234 yap">🔑</button>
-                        <button onclick="deleteUser('${u._id}')" class="btn btn-sm btn-danger" title="Sil">🗑️</button>
-                    ` : '<span style="color:#999">-</span>'}
-                </td>
+                <td>${new Date(log.timestamp).toLocaleString('tr-TR')}</td>
+                <td>${log.user ? log.user.fullName : 'Silinmiş Kullanıcı'}</td>
+                <td>${actionMap[log.action] || log.action}</td>
+                <td>${log.ipAddress || '-'}</td>
             </tr>
         `).join('');
+    } catch(e) { console.error(e); }
+}
+
+async function inspectMessages() {
+    const u1 = document.getElementById('msgUser1').value;
+    const u2 = document.getElementById('msgUser2').value;
+    const area = document.getElementById('inspectorArea');
+    
+    if(!u1 || !u2) return alert("Lütfen iki kullanıcı seçin.");
+    if(u1 === u2) return alert("Farklı kullanıcılar seçmelisiniz.");
+
+    area.style.display = 'block';
+    area.innerHTML = '<div style="text-align:center; padding:20px;">Yükleniyor...</div>';
+
+    try {
+        const res = await fetch(`/api/admin/messages/${u1}/${u2}`);
+        const msgs = await res.json();
+
+        if(msgs.length === 0) {
+            area.innerHTML = '<div style="text-align:center; opacity:0.6; margin-top:20px;">Bu iki kişi arasında mesajlaşma yok.</div>';
+            return;
+        }
+
+        let html = '';
+        msgs.forEach(msg => {
+            const isUser1 = msg.sender._id === u1;
+            const align = isUser1 ? 'flex-start' : 'flex-end';
+            // Renkleri CSS değişkenlerinden al (Tema uyumlu olması için)
+            const bg = isUser1 ? 'var(--message-received-bg)' : 'var(--primary-color)';
+            const color = isUser1 ? 'var(--message-text-color)' : 'white';
+            
+            let content = msg.content;
+            if(msg.messageType === 'file') content = `📎 Dosya: ${msg.fileName}`;
+
+            html += `
+            <div style="display:flex; justify-content:${align}; margin-bottom:10px;">
+                <div style="background:${bg}; color:${color}; padding:10px; border-radius:8px; max-width:70%; border:1px solid var(--border-color);">
+                    <div style="font-size:0.7rem; opacity:0.8; margin-bottom:3px;">${msg.sender.fullName} - ${new Date(msg.createdAt).toLocaleString()}</div>
+                    <div>${content}</div>
+                </div>
+            </div>`;
+        });
+        
+        area.innerHTML = html;
+        setTimeout(() => area.scrollTop = area.scrollHeight, 100);
+
     } catch(e) {
-        console.error(e);
-        tbody.innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Hata: ${e.message}</td></tr>`;
+        area.innerHTML = '<div style="color:var(--danger-color); text-align:center;">Hata oluştu.</div>';
     }
 }
 
-// Tek Kullanıcı Ekle
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
 async function addUser() {
     const data = {
-        username: document.getElementById('newUsername').value.trim(),
-        firstName: document.getElementById('newFirstName').value.trim(),
-        lastName: document.getElementById('newLastName').value.trim(),
-        title: document.getElementById('newTitle').value.trim(),
+        username: document.getElementById('newUsername').value,
+        firstName: document.getElementById('newFirstName').value,
+        lastName: document.getElementById('newLastName').value,
+        title: document.getElementById('newTitle').value,
         titleOrder: document.getElementById('newTitleOrder').value
     };
-
-    if(!data.username || !data.firstName) return alert("Lütfen gerekli alanları doldurun.");
-
-    try {
-        const res = await fetch('/api/users/add', {
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-        
-        const result = await res.json();
-
-        if(res.ok) { 
-            alert('Kullanıcı başarıyla eklendi'); 
-            closeModal('addUserModal'); 
-            loadUsers(); 
-            loadStats(); 
-        } else {
-            alert('Hata: ' + (result.message || 'Ekleme başarısız'));
-        }
-    } catch (e) { alert('Sunucu hatası: ' + e.message); }
+    if(!data.username) return alert("Eksik bilgi");
+    
+    await fetch('/api/users/add', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+    });
+    closeModal('addUserModal');
+    loadUsers(); loadStats();
 }
 
-// Toplu Kullanıcı Ekle (CSV)
 async function bulkAddUsers() {
     const text = document.getElementById('bulkUserData').value;
-    if (!text.trim()) return alert('Lütfen CSV verisi yapıştırın');
-
     const lines = text.split('\n');
     const users = [];
-    
-    // CSV Formatı: kullanici_adi,ad,soyad,unvan,sira_no
-    lines.forEach((line, index) => {
-        const l = line.trim();
-        if(!l || l.toLowerCase().startsWith('kullanici')) return; // Başlığı ve boş satırları atla
-        
-        const cols = l.split(',');
-        
-        // En az 3 alan (username, ad, soyad) olmalı
-        if(cols.length >= 3) {
-            users.push({
-                username: cols[0].trim(),
-                firstName: cols[1].trim(),
-                lastName: cols[2].trim(),
-                fullName: `${cols[1].trim()} ${cols[2].trim()}`,
-                title: cols[3] ? cols[3].trim() : 'Personel',
-                titleOrder: cols[4] ? parseInt(cols[4].trim()) : 100, // Sıra no varsa al, yoksa 100
-                password: '1234' // Varsayılan şifre
-            });
-        }
+    lines.forEach(l => {
+        const c = l.split(',');
+        if(c.length >= 4) users.push({username: c[0].trim(), firstName: c[1].trim(), lastName: c[2].trim(), title: c[3].trim(), titleOrder: c[4]?c[4].trim():100});
     });
-
-    if (users.length === 0) return alert("Geçerli veri bulunamadı. Formatı kontrol edin.");
-
-    try {
-        const res = await fetch('/api/users/bulk', {
-            method: 'POST', 
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ users })
-        });
-        
-        const result = await res.json();
-        
-        if(res.ok) { 
-            alert(result.message || (result.count + ' kullanıcı eklendi'));
-            closeModal('bulkUserModal'); 
-            loadUsers(); 
-            loadStats();
-        } else { 
-            alert('Yükleme hatası: ' + result.message); 
-        }
-    } catch (e) { alert('Sunucu hatası: ' + e.message); }
+    
+    await fetch('/api/users/bulk', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({users})
+    });
+    closeModal('bulkUserModal');
+    loadUsers(); loadStats();
 }
 
-// Tek Kullanıcı Sil
 async function deleteUser(id) {
-    if(!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
-    
-    try {
-        const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
-        const result = await res.json();
-
-        if(res.ok) {
-            alert("Kullanıcı silindi.");
-            loadUsers(); 
-            loadStats(); 
-        } else {
-            alert("Silinemedi: " + result.message);
-        }
-    } catch(e) { alert("Hata oluştu: " + e.message); }
+    if(confirm("Silinsin mi?")) {
+        await fetch(`/api/users/${id}`, { method: 'DELETE' });
+        loadUsers(); loadStats();
+    }
 }
 
-// Tümünü Sil
 async function deleteAllUsers() {
-    if(!confirm('DİKKAT: Yönetici hariç TÜM kullanıcılar silinecek! Bu işlem geri alınamaz.')) return;
-    
-    try {
-        const res = await fetch('/api/users/delete-all', { method: 'DELETE' });
-        const result = await res.json();
-
-        if(res.ok) {
-            alert(result.count + ' kullanıcı silindi.');
-            loadUsers(); 
-            loadStats(); 
-        } else {
-            alert("Silme hatası: " + result.message);
-        }
-    } catch(e) { alert("Hata oluştu: " + e.message); }
+    if(confirm("TÜM kullanıcılar silinecek?")) {
+        await fetch('/api/users/delete-all', { method: 'DELETE' });
+        loadUsers(); loadStats();
+    }
 }
 
-// Şifre Sıfırla
 async function resetPassword(id) {
-    if(!confirm('Bu kullanıcının şifresi "1234" olarak sıfırlansın mı?')) return;
-    
-    try {
-        const res = await fetch(`/api/users/reset-password/${id}`, { method: 'POST' });
-        if(res.ok) {
-            alert('Şifre sıfırlandı.');
-        } else {
-            alert('İşlem başarısız.');
-        }
-    } catch(e) { alert("Hata: " + e.message); }
+    if(confirm("Şifre 1234 olsun mu?")) {
+        await fetch(`/api/users/reset-password/${id}`, { method: 'POST' });
+        alert("Sıfırlandı.");
+    }
 }
 
-// Logo Yükle
 async function uploadLogo(e) {
-    if(!e.target.files[0]) return;
-
-    const formData = new FormData();
-    formData.append('logo', e.target.files[0]);
-    
-    try {
-        const res = await fetch('/api/admin/settings/logo', { method: 'POST', body: formData });
-        if(res.ok) {
-            alert('Logo güncellendi, sayfa yenileniyor...');
-            location.reload();
-        } else {
-            alert('Logo yüklenemedi.');
-        }
-    } catch(e) { alert("Hata: " + e.message); }
+    const file = e.target.files[0];
+    if(!file) return;
+    const fd = new FormData();
+    fd.append('logo', file);
+    await fetch('/api/admin/settings/logo', { method: 'POST', body: fd });
+    location.reload();
 }
