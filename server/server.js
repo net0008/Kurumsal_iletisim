@@ -1,5 +1,5 @@
 // Versiyon: 1.2
-// Değişiklikler: 'io' nesnesi Rotalar (Routes) tarafından erişilebilir hale getirildi (app.set).
+// Değişiklikler: Socket.io 'io' nesnesi global olarak erişilebilir hale getirildi.
 
 const express = require('express');
 const http = require('http');
@@ -46,18 +46,16 @@ const sessionMiddleware = session({
 
 app.use(sessionMiddleware);
 
-// Socket Session Entegrasyonu
+// Socket Session
 io.use((socket, next) => {
   sessionMiddleware(socket.request, {}, next);
 });
 
-// --- ÖNEMLİ GÜNCELLEME BURADA ---
-// Socket.io nesnesini Express uygulamasına kaydediyoruz.
-// Böylece routes/announcements.js içinden erişebileceğiz.
+// === KRİTİK: IO NESNESİNİ PAYLAŞ ===
 app.set('io', io); 
-// --------------------------------
+// ===================================
 
-// Rotaları Tanımla
+// Rotalar
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
@@ -86,12 +84,12 @@ io.on('connection', (socket) => {
   });
 });
 
-// Sistem Başlangıç Temizliği
+// Başlangıç Temizliği
 async function resetSystemStatus() {
     try {
         await User.updateMany({}, { isOnline: false });
-        console.log("✅ Sistem Başlatıldı: Kullanıcı durumları sıfırlandı.");
-
+        console.log("✅ Sistem v1.2 Başlatıldı");
+        
         const adminExists = await User.findOne({ username: 'admin' });
         if (!adminExists) {
             await User.create({
@@ -104,9 +102,8 @@ async function resetSystemStatus() {
                 role: 'admin',
                 firstLogin: false
             });
-            console.log('✅ Varsayılan admin oluşturuldu.');
         }
-    } catch (err) { console.error('Başlangıç hatası:', err); }
+    } catch (err) { console.error(err); }
 }
 
 const PORT = process.env.PORT || 3000;
