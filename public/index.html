@@ -9,7 +9,6 @@
 </head>
 <body>
     <div id="app">
-        <!-- Header -->
         <header class="app-header">
             <div class="header-left">
                 <img id="headerLogo" src="/img/logo.png" onerror="this.style.display='none'" class="header-logo" alt="Logo">
@@ -26,72 +25,99 @@
             </div>
         </header>
 
-        <!-- Main Content -->
         <div class="main-content">
-            <!-- SOL PANEL: Kullanıcılar -->
+            
             <aside class="left-panel">
                 <div class="panel-header">
                     <h2>Kullanıcılar</h2>
-                    <input type="text" id="userSearch" placeholder="Ara..." style="padding:5px; border-radius:4px; border:1px solid #ccc; width: 120px;">
+                    <input type="text" id="userSearch" placeholder="Ara..." style="padding:4px; border-radius:4px; border:1px solid #ddd; width: 100px; display:none;"> 
                 </div>
-                <div id="userList" class="user-list"></div>
+                <div id="userList" class="user-list">
+                    <div style="padding:15px; color:#999; text-align:center;">Yükleniyor...</div>
+                </div>
             </aside>
 
-            <!-- ORTA PANEL: Sohbet -->
             <main class="center-panel">
-                <!-- Varsayılan Görünüm (Logo) -->
-                <div id="defaultView" class="default-view">
-                    <img src="/img/logo.png" onerror="this.style.display='none'" class="center-logo" alt="Logo">
-                    <p class="welcome-text">Sohbet etmek için kişi seçiniz</p>
-                </div>
-
-                <!-- Sohbet Penceresi -->
-                <div id="chatWindow" class="chat-window" style="display:none;">
-                    <div class="chat-header">
-                        <div class="chat-user-info">
-                            <span class="chat-user-name" id="chatUserName" style="font-weight:bold;"></span>
-                            <span class="chat-user-status" id="chatUserStatus" style="font-size:0.8rem; margin-left:10px; color:#666;"></span>
-                        </div>
-                        <button id="closeChatBtn" class="btn-close">✕</button>
+                
+                <div class="chat-area-wrapper">
+                    
+                    <div id="defaultView" class="default-view">
+                        <img src="/img/logo.png" onerror="this.style.display='none'" class="center-logo" alt="Logo">
+                        <p class="welcome-text">Sohbet etmek için kişi seçiniz</p>
                     </div>
-                    
-                    <div id="chatMessages" class="chat-messages"></div>
-                    
-                    <!-- Dosya Yükleme Progress -->
-                    <div id="uploadProgress" style="display:none; padding:10px; background:#fff; text-align:center; font-size:0.8rem; border-top:1px solid #eee;">Dosya Yükleniyor...</div>
 
-                    <div class="chat-input">
-                        <input type="file" id="chatFileInput" style="display:none;">
-                        <button class="btn-close" style="font-size:1.5rem; margin-right:10px; cursor:pointer;" onclick="document.getElementById('chatFileInput').click()">📎</button>
-                        <textarea id="messageInput" placeholder="Mesajınızı yazın... (Enter gönderir)" rows="1"></textarea>
-                        <button id="sendMessageBtn" class="btn btn-primary">Gönder</button>
+                    <div id="chatWindow" class="chat-window" style="display:none;">
+                        <div class="chat-header">
+                            <div class="chat-user-info">
+                                <span id="chatUserName" style="font-weight:bold;"></span>
+                                <span id="chatUserStatus" style="font-size:0.8rem; margin-left:10px; color:#666;"></span>
+                            </div>
+                            <button id="closeChatBtn" class="btn-close">✕</button>
+                        </div>
+                        
+                        <div id="chatMessages" class="chat-messages"></div>
+                        
+                        <div id="uploadProgress" style="display:none; padding:5px; background:#e3f2fd; text-align:center; font-size:0.8rem;">Yükleniyor...</div>
+
+                        <div class="chat-input">
+                            <input type="file" id="chatFileInput" style="display:none;">
+                            <button id="chat-file-btn" class="btn-close" style="font-size:1.5rem; margin-right:10px; cursor:pointer;" title="Dosya Gönder">📎</button>
+                            <textarea id="messageInput" placeholder="Mesajınızı yazın... (Enter gönderir)" rows="1"></textarea>
+                            <button id="sendMessageBtn" class="btn btn-primary">Gönder</button>
+                        </div>
+                    </div>
+                </div> 
+                <div id="sharedFilesArea" class="shared-files-container">
+                    <div class="files-list-section">
+                        <h3 class="files-header"><i class="fas fa-folder-open"></i> Ortak Dosyalar</h3>
+                        <div id="sharedFileList" class="files-list-content">
+                            <div style="text-align:center; color:#999; font-size:0.8rem; padding:10px;">Yükleniyor...</div>
+                        </div>
+                    </div>
+
+                    <div class="files-upload-section">
+                        <h3 class="files-header"><i class="fas fa-cloud-upload-alt"></i> Dosya Yükle</h3>
+                        <div class="upload-box">
+                            <input type="file" id="sharedFileInput" style="display: none;">
+                            <button onclick="document.getElementById('sharedFileInput').click()" class="btn btn-sm btn-primary" style="width:100%; margin-bottom: 5px;">Dosya Seç</button>
+                            <div id="sharedFileName" style="font-size:0.7rem; margin-bottom:5px; color:#555; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; height: 15px;">Seçilmedi</div>
+                            <button onclick="uploadSharedFile()" class="btn btn-sm btn-success" style="width:100%">Yükle</button>
+                            <div style="font-size:0.6rem; color:#e74c3c; margin-top:5px; text-align:center;">Max 20MB</div>
+                        </div>
                     </div>
                 </div>
             </main>
 
-            <!-- SAĞ PANEL: Duyurular -->
             <aside class="right-panel">
                 <div class="panel-header">
                     <h2>Duyuru Panosu</h2>
-                    <!-- Ekleme butonu artık herkes için görünür -->
                     <button id="addAnnouncementBtn" class="btn btn-sm btn-success">+ Ekle</button>
                 </div>
-                <div id="announcementList" class="announcement-list"></div>
                 
-                <!-- YENİ: TAKVİM ALANI -->
+                <div id="announcementList" class="announcement-list">
+                     </div>
+                
                 <div id="calendar" class="calendar-wrapper"></div>
             </aside>
         </div>
     </div>
 
-    <!-- Duyuru Ekleme Modal -->
     <div id="announcementModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header"><h2>Yeni Duyuru</h2><button class="btn-close" onclick="closeModal('announcementModal')">✕</button></div>
-            <div class="form-group"><label>Başlık</label><input type="text" id="annTitle"></div>
-            <div class="form-group"><label>İçerik</label><textarea id="annContent" rows="4"></textarea></div>
+            <div class="modal-header">
+                <h2>Yeni Duyuru</h2>
+                <button class="btn-close">✕</button>
+            </div>
+            <div class="form-group">
+                <label>Başlık</label>
+                <input type="text" id="annTitle">
+            </div>
+            <div class="form-group">
+                <label>İçerik</label>
+                <textarea id="annContent" rows="4"></textarea>
+            </div>
             <div class="form-actions">
-                <button class="btn btn-secondary" onclick="closeModal('announcementModal')">İptal</button>
+                <button class="btn btn-secondary btn-close">İptal</button>
                 <button class="btn btn-primary" onclick="saveAnnouncement()">Kaydet</button>
             </div>
         </div>

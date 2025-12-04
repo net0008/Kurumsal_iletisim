@@ -1,59 +1,42 @@
+// Versiyon: 1.1 (Ortak Dosya Alanı Özelliği)
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const File = require('../models/File');
-const { requireAuth } = require('../middleware/auth'); // Nesne olarak al ({ requireAuth })
+const { requireAuth } = require('../middleware/auth');
 
-// Upload Klasörü Kontrolü
+// Upload Klasörü
 const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 // Multer Ayarları
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        // Türkçe karakter sorununu önlemek için safe isim
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+        // Türkçe karakter ve boşlukları temizleyerek güvenli isim oluştur
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+        cb(null, uniqueSuffix + '-' + safeName);
     }
 });
+const upload = multer({ limits: { fileSize: 20 * 1024 * 1024 }, storage: storage }); // 20MB Limit
 
-const upload = multer({ 
-    storage: storage,
-    limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
-});
-
-// Tüm rotalar korumalı
 router.use(requireAuth);
 
-// Sohbet İçi Dosya Yükleme
-router.post('/chat-upload', upload.single('file'), async (req, res) => {
+// 1. Dosyaları Listele (Paylaşım Alanı İçin)
+router.get('/shared', async (req, res) => {
     try {
-        if (!req.file) return res.status(400).json({ message: 'Dosya seçilmedi' });
-
-        // URL (public klasöründen erişim için)
-        const fileUrl = `/uploads/${req.file.filename}`;
-
-        res.json({
-            success: true,
-            fileUrl: fileUrl,
-            fileName: req.file.originalname,
-            mimetype: req.file.mimetype
-        });
-    } catch (error) {
-        console.error("Dosya yükleme hatası:", error);
-        res.status(500).json({ message: 'Dosya yüklenemedi' });
-    }
+        const files = await File.find()
+            .sort({ createdAt: -1 }) // En yeni en üstte
+            .populate('uploader', 'username fullName');
+        res.json(files);
+    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Admin / Kurumsal Dosya Yükleme
-router.post('/upload', upload.single('file'), async (req, res) => {
+// 2. Ortak Alana Dosya Yükle
+router.post('/shared', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'Dosya seçilmedi' });
 
@@ -66,22 +49,51 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             uploader: req.user._id
         });
 
-        res.json({ success: true, file: newFile });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+        // Socket Bildirimi (Anlık Güncelleme)
+        const io = req.app.get('io');
+        if (io) io.emit('shared-file-change');
+
+        res.json(newFile);
+    } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Dosyaları Listele
-router.get('/', async (req, res) => {
+// 3. Dosya Sil (Sadece Admin veya Yükleyen)
+router.delete('/:id', async (req, res) => {
     try {
-        const files = await File.find()
-            .sort({ createdAt: -1 })
-            .populate('uploader', 'username fullName');
-        res.json(files);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+        const file = await File.findById(req.params.id);
+        if (!file) return res.status(404).json({ message: 'Dosya bulunamadı' });
+
+        const isOwner = file.uploader.toString() === req.user._id.toString();
+        const isAdmin = req.user.isAdmin === true || req.user.role === 'admin';
+
+        if (!isOwner && !isAdmin) return res.status(403).json({ message: 'Yetkiniz yok' });
+
+        // Veritabanından sil
+        await File.findByIdAndDelete(req.params.id);
+
+        // Fiziksel dosyayı sil (Sunucuda yer kaplamasın)
+        const filePath = path.join(__dirname, '../uploads', file.filename);
+        if (fs.existsSync(filePath)) {
+            try { fs.unlinkSync(filePath); } catch(e) { console.error("Dosya silinemedi:", e); }
+        }
+
+        // Socket Bildirimi
+        const io = req.app.get('io');
+        if (io) io.emit('shared-file-change');
+
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// Sohbet İçi Resim Yükleme (Eski özellik)
+router.post('/chat-upload', upload.single('file'), (req, res) => {
+    if (!req.file) return res.status(400).json({ message: 'Dosya yok' });
+    res.json({
+        success: true,
+        fileUrl: `/uploads/${req.file.filename}`,
+        fileName: req.file.originalname,
+        mimetype: req.file.mimetype
+    });
 });
 
 module.exports = router;

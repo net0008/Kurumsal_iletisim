@@ -1,5 +1,4 @@
-/* Versiyon: 1.2 (Fix) */
-/* Düzeltme: Kaybolan Admin Paneli stilleri geri eklendi. Takvim ve Sohbet stilleri korundu. */
+/* Versiyon: 2.0 (Layout Final & Ortak Dosya Alanı) */
 
 :root {
     --primary-color: #4a90e2;
@@ -23,7 +22,7 @@ body {
     overflow: hidden;
 }
 
-/* --- LAYOUT (GENEL DÜZEN) --- */
+/* --- GENEL DÜZEN (LAYOUT) --- */
 #app { display: flex; flex-direction: column; height: 100%; }
 
 .app-header {
@@ -41,10 +40,20 @@ body {
 
 .main-content { display: flex; flex: 1; overflow: hidden; }
 
-/* --- PANELLER (SOL/ORTA/SAĞ) --- */
+/* --- PANELLER --- */
 .left-panel { width: 300px; background: var(--panel-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; }
-.center-panel { flex: 1; background: #eef2f5; position: relative; display: flex; flex-direction: column; }
 .right-panel { width: 300px; background: var(--panel-bg); border-left: 1px solid var(--border-color); display: flex; flex-direction: column; }
+
+/* ORTA PANEL (DÜZENLENDİ - FIX) */
+.center-panel {
+    flex: 1;
+    background: #eef2f5;
+    position: relative;
+    display: flex;
+    flex-direction: column; /* Alt alta dizilim */
+    height: 100%;
+    overflow: hidden;
+}
 
 .panel-header {
     padding: 15px; border-bottom: 1px solid var(--border-color); background: #f8f9fa;
@@ -82,7 +91,17 @@ body {
     padding: 2px 6px; border-radius: 10px; font-weight: bold; min-width: 18px; text-align: center;
 }
 
-/* --- SOHBET ALANI --- */
+/* --- SOHBET ALANI (DÜZENLENDİ - FIX) --- */
+/* Sohbet ve mesaj alanını kapsayan esnek kutu */
+.chat-area-wrapper {
+    flex: 1; /* Kalan tüm boşluğu kaplar */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    min-height: 0; /* Flexbox taşma önleyici */
+}
+
 .default-view { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.8; }
 .center-logo { width: 150px; margin-bottom: 20px; opacity: 0.5; }
 
@@ -100,6 +119,89 @@ body {
 
 .chat-input { padding: 15px; background: white; border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; }
 textarea { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 10px 15px; resize: none; outline: none; font-family: inherit; }
+
+/* --- ORTAK DOSYA ALANI (YENİ) --- */
+.shared-files-container {
+    height: 160px; /* Sabit Yükseklik */
+    background: #fffbe7; /* Sarı arka plan */
+    border-top: 2px solid #f1c40f;
+    display: flex;
+    flex-shrink: 0; /* Asla küçülme */
+    padding: 10px;
+    gap: 15px;
+    z-index: 10;
+}
+
+/* Sol Taraf: Liste */
+.files-list-section {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    overflow: hidden;
+}
+
+.files-header {
+    background: #f8f9fa;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-bottom: 1px solid #eee;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.files-list-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.shared-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-bottom: 1px solid #f1f1f1;
+    font-size: 0.75rem;
+    transition: background 0.2s;
+}
+.shared-file-item:last-child { border-bottom: none; }
+.shared-file-item:hover { background: #f9f9f9; }
+
+.file-info-left { display: flex; flex-direction: column; overflow: hidden; max-width: 85%; }
+.file-name { font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-meta { font-size: 0.7rem; color: #888; display: flex; gap: 8px; }
+.file-actions { display: flex; gap: 5px; }
+
+/* Sağ Taraf: Yükleme */
+.files-upload-section {
+    flex: 1;
+    min-width: 140px;
+    max-width: 200px;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.upload-box {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.btn-icon { background: none; border: none; cursor: pointer; padding: 3px 5px; border-radius: 3px; }
+.btn-icon.download { color: var(--primary-color); }
+.btn-icon.delete { color: var(--danger-color); }
+.btn-icon:hover { background: #eee; }
 
 /* --- DUYURULAR --- */
 .announcement-list { padding: 15px; overflow-y: auto; flex: 1; }
@@ -137,13 +239,14 @@ textarea { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 10px 1
 .calendar-day:hover:not(.empty):not(.today) { background: #f0f0f0; }
 .calendar-day.empty { background: transparent; }
 
-/* --- ADMIN PANELİ STİLLERİ (GERİ EKLENDİ) --- */
+/* --- ADMIN PANELİ --- */
 .admin-container { padding: 30px; max-width: 1400px; margin: 0 auto; height: 100vh; overflow-y: auto; }
 .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
 .stat-card { background: var(--panel-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; }
 .stat-value { font-size: 32px; font-weight: bold; color: var(--primary-color); }
+.stat-label { margin-top: 10px; opacity: 0.7; }
 
 .admin-section { background: var(--panel-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); }
@@ -156,7 +259,6 @@ textarea { flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 10px 1
 .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
 .modal.active { display: flex; }
 .modal-content { background: white; padding: 25px; border-radius: 8px; width: 400px; max-width: 90%; }
-.modal-large { width: 800px; }
 .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
 
 .form-group { margin-bottom: 15px; }
