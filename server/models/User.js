@@ -1,4 +1,4 @@
-// Versiyon: 1.1 (Profil Alanları Eklendi)
+// Versiyon: 1.2 (Sesli Bildirim Ayarı Eklendi)
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
@@ -18,8 +18,9 @@ const UserSchema = new mongoose.Schema({
     // --- YENİ EKLENEN ALANLAR ---
     firstLogin: { type: Boolean, default: true },
     agreedToTerms: { type: Boolean, default: false },
-    theme: { type: String, default: 'light' }, // light, dark, blue, green
+    theme: { type: String, default: 'light' }, // light, dark, gold, teal
     profileImage: { type: String, default: '' }, // Profil resmi yolu
+    notificationSound: { type: Boolean, default: true }, // [YENİ] Sesli bildirim durumu
     // ----------------------------
     
     createdAt: { type: Date, default: Date.now }

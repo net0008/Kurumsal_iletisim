@@ -1,0 +1,4 @@
+npm run dev
+
+
+Önceki tüm mesajları oku bir özelliği eklerken diğerini bozma.

@@ -1,4 +1,4 @@
-// Versiyon: 2.3 (Tema Doğrulama Güncellendi)
+// Versiyon: 2.4 (Ses Ayarı Endpoint'i Eklendi)
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -59,15 +59,23 @@ router.post('/profile/avatar', upload.single('avatar'), async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// 2. Tema Güncelle (DÜZELTME BURADA YAPILDI)
+// 2. Tema Güncelle
 router.put('/profile/theme', async (req, res) => {
     try {
         const { theme } = req.body;
-        // YENİ TEMALAR İÇİN İZİN LİSTESİ: light, dark, gold, teal
         if (!['light', 'dark', 'gold', 'teal'].includes(theme)) {
             return res.status(400).json({ message: 'Geçersiz tema' });
         }
         await User.findByIdAndUpdate(req.session.userId, { theme });
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// 3. [YENİ] Sesli Bildirim Ayarı Güncelle
+router.put('/profile/notification-sound', async (req, res) => {
+    try {
+        const { enabled } = req.body;
+        await User.findByIdAndUpdate(req.session.userId, { notificationSound: enabled });
         res.json({ success: true });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });

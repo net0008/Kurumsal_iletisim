@@ -1,10 +1,13 @@
-// Versiyon: 2.0 (Header Avatar Eklendi)
+// Versiyon: 2.1 (Sesli Bildirim Kontrolü Eklendi)
 const socket = io();
 let currentUser = null;
 let selectedUser = null;
 
 const notificationSound = new Audio('/sounds/notification.mp3');
+
+// [GÜNCELLENDİ] Kullanıcı tercihi kapalıysa ses çalma
 function playNotificationSound() {
+    if (currentUser && currentUser.notificationSound === false) return;
     notificationSound.currentTime = 0;
     notificationSound.play().catch(() => {});
 }
@@ -34,7 +37,7 @@ async function getCurrentUser() {
     document.getElementById('currentUserName').innerText = currentUser.fullName || currentUser.username;
     document.getElementById('user-title-display').innerText = currentUser.title || '';
     
-    // 2. Header Avatarı (YENİ)
+    // 2. Header Avatarı
     const headerAvatar = document.getElementById('headerUserAvatar');
     if(headerAvatar) {
         const initial = (currentUser.firstName?.[0] || currentUser.username[0]).toUpperCase();
@@ -47,16 +50,37 @@ async function getCurrentUser() {
 
     // 3. Tema Uygula
     if(currentUser.theme) document.body.setAttribute('data-theme', currentUser.theme);
+    
+    // 4. [YENİ] Ses Ayarını Checkbox'a Yansıt
+    const soundCheck = document.getElementById('notificationSoundCheck');
+    if(soundCheck) {
+        // notificationSound undefined ise (eski kullanıcı) true kabul et
+        soundCheck.checked = currentUser.notificationSound !== false;
+    }
 
-    // 4. Yetki Butonları
+    // 5. Yetki Butonları
     if(currentUser.isAdmin) document.getElementById('adminBtn').style.display = 'block';
     document.getElementById('addAnnouncementBtn').style.display = 'block';
 
     socket.emit('user-online', currentUser._id);
 }
 
-// ... (Geri kalan tüm fonksiyonlar aynı - initListeners, loadUsers, selectUser vb.) ...
-// Kopyala-Yapıştır kolaylığı için eski kodlarınızı koruyabilirsiniz, sadece getCurrentUser değişti.
+// [YENİ] Ses ayarını değiştir ve sunucuya kaydet
+window.toggleNotificationSound = async function() {
+    const checkbox = document.getElementById('notificationSoundCheck');
+    const enabled = checkbox.checked;
+    
+    // Anlık olarak locale uygula
+    currentUser.notificationSound = enabled;
+    
+    try {
+        await fetch('/api/users/profile/notification-sound', { 
+            method: 'PUT', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ enabled }) 
+        });
+    } catch(e) { console.error('Ses ayarı kaydedilemedi', e); }
+};
 
 function initListeners() {
     const sendBtn = document.getElementById('sendMessageBtn');
