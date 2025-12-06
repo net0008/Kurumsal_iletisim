@@ -1,32 +1,56 @@
-// Versiyon: 1.2 (Fix: Türkçe Karakter Sorunu Düzeltildi)
+// Versiyon: 1.3 (Dinamik Dosya Limiti)
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const File = require('../models/File');
+const Settings = require('../models/Settings'); // [YENİ]
 const { requireAuth } = require('../middleware/auth');
 
 // Upload Klasörü Kontrolü
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-// --- MULTER AYARLARI ---
+// Temel Multer Storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => {
-        // Disk üzerine kaydederken Türkçe karakterleri ve riskli işaretleri temizle (Güvenlik için)
-        // Bu sadece sunucudaki dosya adı içindir, veritabanında orijinalini tutacağız.
         const safeName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, uniqueSuffix + '-' + safeName);
     }
 });
 
-const upload = multer({ 
-    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB Limit
-    storage: storage 
-});
+// [YENİ] Dinamik Upload Middleware Oluşturucu
+const dynamicUpload = (fieldName) => {
+    return async (req, res, next) => {
+        try {
+            // Veritabanından limiti çek
+            let settings = await Settings.findOne({ key: 'system_config' });
+            const limit = settings ? settings.maxFileSize : 20 * 1024 * 1024; // Varsayılan 20MB
+
+            // Multer örneğini o anki limit ile oluştur
+            const upload = multer({ 
+                limits: { fileSize: limit },
+                storage: storage 
+            }).single(fieldName);
+
+            // Upload işlemini başlat
+            upload(req, res, (err) => {
+                if (err) {
+                    if (err.code === 'LIMIT_FILE_SIZE') {
+                        return res.status(400).json({ message: `Dosya çok büyük! Maksimum limit: ${Math.floor(limit / (1024*1024))}MB` });
+                    }
+                    return res.status(400).json({ message: err.message });
+                }
+                next();
+            });
+        } catch (e) {
+            next(e);
+        }
+    };
+};
 
 router.use(requireAuth);
 
@@ -40,32 +64,25 @@ router.get('/shared', async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// 2. Ortak Alana Dosya Yükle (DÜZELTME BURADA YAPILDI)
-router.post('/shared', upload.single('file'), async (req, res) => {
+// 2. Ortak Alana Dosya Yükle (Dinamik Limitli)
+router.post('/shared', dynamicUpload('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'Dosya seçilmedi' });
 
-        // --- TÜRKÇE KARAKTER DÜZELTME ---
-        // Multer bazen dosya isimlerini Latin1 (ISO-8859-1) olarak okur.
-        // Bunu UTF-8'e çevirerek "İ, ş, ğ" gibi harfleri düzeltiyoruz.
         let fixedOriginalName = req.file.originalname;
         try {
             fixedOriginalName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
-        } catch (e) {
-            console.log("Karakter dönüştürme hatası, orijinal isim kullanılıyor.");
-        }
-        // -------------------------------
+        } catch (e) {}
 
         const newFile = await File.create({
-            filename: req.file.filename, // Diskteki güvenli isim (örn: 12345_tutanak.pdf)
-            originalName: fixedOriginalName, // Ekranda görünecek Türkçe isim (örn: TUTANAKTIR.pdf)
+            filename: req.file.filename,
+            originalName: fixedOriginalName,
             path: `/uploads/${req.file.filename}`,
             mimetype: req.file.mimetype,
             size: req.file.size,
             uploader: req.user._id
         });
 
-        // Socket Bildirimi
         const io = req.app.get('io');
         if (io) io.emit('shared-file-change');
 
@@ -98,11 +115,10 @@ router.delete('/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Sohbet İçi Resim Yükleme (Buraya da düzeltme eklendi)
-router.post('/chat-upload', upload.single('file'), (req, res) => {
+// Sohbet İçi Resim Yükleme (Dinamik Limitli)
+router.post('/chat-upload', dynamicUpload('file'), (req, res) => {
     if (!req.file) return res.status(400).json({ message: 'Dosya yok' });
 
-    // Türkçe karakter düzeltme
     let fixedName = req.file.originalname;
     try { fixedName = Buffer.from(req.file.originalname, 'latin1').toString('utf8'); } catch(e){}
 

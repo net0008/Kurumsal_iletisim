@@ -1,4 +1,4 @@
-// Versiyon: 2.2 (Toplu Silme JS Eklendi)
+// Versiyon: 2.3 (Dosya Ayarı JS Eklendi)
 let allUsers = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadStats();
     await loadUsers(); 
     await loadLogs();
+    await loadFileLimit(); // [YENİ]
     
     const logoIn = document.getElementById('logoInput');
     if(logoIn) logoIn.addEventListener('change', uploadLogo);
@@ -31,15 +32,44 @@ async function loadStats() {
         document.getElementById('onlineUsers').innerText = data.onlineUsers;
         document.getElementById('totalMessages').innerText = data.totalMessages;
         document.getElementById('totalAnnouncements').innerText = data.totalAnnouncements;
-        
-        // Yeni eklenen dosya istatistiği
         if(document.getElementById('totalFiles')) {
             document.getElementById('totalFiles').innerText = data.totalFiles;
         }
     } catch(e){}
 }
 
-// --- YENİ: TOPLU SİLME FONKSİYONLARI ---
+// --- YENİ: DOSYA LİMİTİ FONKSİYONLARI ---
+async function loadFileLimit() {
+    try {
+        const res = await fetch('/api/admin/settings/file-limit');
+        const data = await res.json();
+        if(data.limitMB) {
+            document.getElementById('fileSizeLimit').value = data.limitMB;
+            document.getElementById('currentLimitDisplay').innerText = data.limitMB;
+        }
+    } catch(e){}
+}
+
+async function updateFileLimit() {
+    const limit = document.getElementById('fileSizeLimit').value;
+    if(!limit || limit < 1) return alert("Geçerli bir limit giriniz (MB)");
+    
+    try {
+        const res = await fetch('/api/admin/settings/file-limit', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ limitMB: limit })
+        });
+        const data = await res.json();
+        if(res.ok) {
+            alert(data.message);
+            loadFileLimit(); // Ekranı güncelle
+        } else {
+            alert(data.message);
+        }
+    } catch(e) { alert("Hata oluştu"); }
+}
+// -----------------------------------------
 
 async function deleteAllMessages() {
     if(!confirm("DİKKAT! Sistemdeki TÜM mesajlar kalıcı olarak silinecek. Onaylıyor musunuz?")) return;
@@ -70,8 +100,6 @@ async function deleteAllFiles() {
         loadStats();
     } catch(e) { alert("Hata oluştu"); }
 }
-
-// ----------------------------------------
 
 async function loadUsers() {
     try {

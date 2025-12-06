@@ -1,4 +1,4 @@
-// Versiyon: 2.2 (Toplu Silme İşlemleri Eklendi)
+// Versiyon: 2.3 (Dosya Limiti Ayarı Eklendi)
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -11,6 +11,7 @@ const Message = require('../models/Message');
 const Announcement = require('../models/Announcement');
 const File = require('../models/File');
 const Log = require('../models/Log');
+const Settings = require('../models/Settings'); // [YENİ]
 
 const { requireAuth } = require('../middleware/auth');
 const isAdmin = require('../middleware/admin');
@@ -30,7 +31,42 @@ router.get('/stats', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// Logları Getir
+// --- SİSTEM AYARLARI (YENİ) ---
+
+// Dosya Boyutu Limitini Getir
+router.get('/settings/file-limit', async (req, res) => {
+    try {
+        let settings = await Settings.findOne({ key: 'system_config' });
+        if (!settings) {
+            settings = await Settings.create({ key: 'system_config' });
+        }
+        // Byte cinsinden MB'a çevirip gönderelim (Frontend kolaylığı için)
+        const limitMB = Math.floor(settings.maxFileSize / (1024 * 1024));
+        res.json({ limitMB });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+// Dosya Boyutu Limitini Güncelle
+router.put('/settings/file-limit', async (req, res) => {
+    try {
+        const { limitMB } = req.body;
+        const limitBytes = parseInt(limitMB) * 1024 * 1024;
+        
+        if (!limitBytes || limitBytes < 1024 * 1024) { // En az 1MB olsun
+            return res.status(400).json({ message: 'Geçersiz limit (Min 1MB)' });
+        }
+
+        await Settings.findOneAndUpdate(
+            { key: 'system_config' },
+            { maxFileSize: limitBytes, updatedAt: Date.now() },
+            { upsert: true, new: true }
+        );
+
+        res.json({ success: true, message: `Limit ${limitMB}MB olarak güncellendi.` });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
+// --- LOGLAR ---
 router.get('/logs', async (req, res) => {
     try {
         const logs = await Log.find()
@@ -58,51 +94,35 @@ router.get('/messages/:user1/:user2', async (req, res) => {
     } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
-// --- YENİ: TOPLU SİLME İŞLEMLERİ ---
-
-// 1. Tüm Mesajları Sil
+// --- TOPLU SİLME İŞLEMLERİ ---
 router.delete('/messages/all', async (req, res) => {
     try {
         await Message.deleteMany({});
-        // Socket ile istemcilere bildirim gönderilebilir (Opsiyonel)
         res.json({ success: true, message: 'Tüm mesajlar silindi.' });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// 2. Tüm Duyuruları Sil
 router.delete('/announcements/all', async (req, res) => {
     try {
         await Announcement.deleteMany({});
-        
-        // Socket ile arayüzü güncelle
         const io = req.app.get('io');
         if (io) io.emit('announcement-change');
-
         res.json({ success: true, message: 'Tüm duyurular silindi.' });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// 3. Tüm Dosyaları Sil (Veritabanı + Disk)
 router.delete('/files/all', async (req, res) => {
     try {
-        // Önce tüm dosyaları bul
         const files = await File.find();
-        
-        // Diskten sil
         files.forEach(file => {
             const filePath = path.join(__dirname, '../uploads', file.filename);
             if (fs.existsSync(filePath)) {
                 try { fs.unlinkSync(filePath); } catch(e) { console.error("Dosya silme hatası:", e); }
             }
         });
-
-        // Veritabanından sil
         await File.deleteMany({});
-
-        // Socket ile arayüzü güncelle
         const io = req.app.get('io');
         if (io) io.emit('shared-file-change');
-
         res.json({ success: true, message: 'Tüm dosyalar temizlendi.' });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
