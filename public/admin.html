@@ -26,17 +26,34 @@
                 <div class="stat-value" id="totalUsers">0</div>
                 <div class="stat-label">Toplam Kullanıcı</div>
             </div>
+            
             <div class="stat-card">
                 <div class="stat-value" id="onlineUsers">0</div>
                 <div class="stat-label">Çevrimiçi</div>
             </div>
+            
             <div class="stat-card">
                 <div class="stat-value" id="totalMessages">0</div>
                 <div class="stat-label">Toplam Mesaj</div>
+                <button onclick="deleteAllMessages()" class="btn btn-sm btn-danger" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-trash"></i> Tümünü Sil
+                </button>
             </div>
+            
             <div class="stat-card">
                 <div class="stat-value" id="totalAnnouncements">0</div>
                 <div class="stat-label">Duyuru</div>
+                <button onclick="deleteAllAnnouncements()" class="btn btn-sm btn-danger" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-trash"></i> Tümünü Sil
+                </button>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-value" id="totalFiles">0</div>
+                <div class="stat-label">Paylaşılan Dosya</div>
+                <button onclick="deleteAllFiles()" class="btn btn-sm btn-danger" style="width: 100%; margin-top: 10px;">
+                    <i class="fas fa-trash"></i> Tümünü Sil
+                </button>
             </div>
         </div>
 
@@ -49,7 +66,6 @@
                     <button onclick="deleteAllUsers()" class="btn btn-danger"><i class="fas fa-trash"></i> Tümünü Sil</button>
                 </div>
             </div>
-            
             <div style="overflow-x: auto; max-height: 400px;">
                 <table class="user-table">
                     <thead>
@@ -128,7 +144,6 @@
                     </button>
                 </div>
             </div>
-            
             <div id="inspectorArea" style="height:300px; overflow-y:auto; border:1px solid var(--border-color); background:var(--bg-color); padding:15px; border-radius:5px; margin-top:10px; display:none;">
                 <p style="text-align:center; opacity: 0.6;">Görüntülemek için iki kullanıcı seçin.</p>
             </div>

@@ -1,8 +1,8 @@
-// Versiyon: 2.1 (Tema Desteği Eklendi)
+// Versiyon: 2.2 (Toplu Silme JS Eklendi)
 let allUsers = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await applyAdminTheme(); // YENİ: Temayı uygula
+    await applyAdminTheme();
     await loadStats();
     await loadUsers(); 
     await loadLogs();
@@ -11,13 +11,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(logoIn) logoIn.addEventListener('change', uploadLogo);
 });
 
-// --- TEMA UYGULAMA (YENİ) ---
 async function applyAdminTheme() {
     try {
         const res = await fetch('/api/auth/me');
         if(res.ok) {
             const data = await res.json();
-            // Kullanıcının teması varsa body'ye uygula
             if(data.user && data.user.theme) {
                 document.body.setAttribute('data-theme', data.user.theme);
             }
@@ -33,10 +31,48 @@ async function loadStats() {
         document.getElementById('onlineUsers').innerText = data.onlineUsers;
         document.getElementById('totalMessages').innerText = data.totalMessages;
         document.getElementById('totalAnnouncements').innerText = data.totalAnnouncements;
+        
+        // Yeni eklenen dosya istatistiği
+        if(document.getElementById('totalFiles')) {
+            document.getElementById('totalFiles').innerText = data.totalFiles;
+        }
     } catch(e){}
 }
 
-// Kullanıcıları Yükle ve Selectbox'ları Doldur
+// --- YENİ: TOPLU SİLME FONKSİYONLARI ---
+
+async function deleteAllMessages() {
+    if(!confirm("DİKKAT! Sistemdeki TÜM mesajlar kalıcı olarak silinecek. Onaylıyor musunuz?")) return;
+    try {
+        const res = await fetch('/api/admin/messages/all', { method: 'DELETE' });
+        const data = await res.json();
+        alert(data.message);
+        loadStats();
+    } catch(e) { alert("Hata oluştu"); }
+}
+
+async function deleteAllAnnouncements() {
+    if(!confirm("DİKKAT! Tüm duyurular silinecek. Onaylıyor musunuz?")) return;
+    try {
+        const res = await fetch('/api/admin/announcements/all', { method: 'DELETE' });
+        const data = await res.json();
+        alert(data.message);
+        loadStats();
+    } catch(e) { alert("Hata oluştu"); }
+}
+
+async function deleteAllFiles() {
+    if(!confirm("DİKKAT! Tüm ortak dosyalar ve sohbet dosyaları hem veritabanından hem de diskten silinecek. Onaylıyor musunuz?")) return;
+    try {
+        const res = await fetch('/api/admin/files/all', { method: 'DELETE' });
+        const data = await res.json();
+        alert(data.message);
+        loadStats();
+    } catch(e) { alert("Hata oluştu"); }
+}
+
+// ----------------------------------------
+
 async function loadUsers() {
     try {
         const res = await fetch('/api/users');
@@ -128,7 +164,6 @@ async function inspectMessages() {
         msgs.forEach(msg => {
             const isUser1 = msg.sender._id === u1;
             const align = isUser1 ? 'flex-start' : 'flex-end';
-            // Renkleri CSS değişkenlerinden al (Tema uyumlu olması için)
             const bg = isUser1 ? 'var(--message-received-bg)' : 'var(--primary-color)';
             const color = isUser1 ? 'var(--message-text-color)' : 'white';
             
